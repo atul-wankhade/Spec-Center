@@ -39,6 +39,7 @@ func main() {
 
 	// setup casbin auth rules
 	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
+	fmt.Println("S")
 	if err != nil {
 		log.Fatal(err)
 	}
