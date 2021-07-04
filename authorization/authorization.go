@@ -32,7 +32,7 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 			})
 
 			if err != nil {
-				WriteError(http.StatusInternalServerError, "PARSE ERROR", w, err)
+				WriteError(http.StatusInternalServerError, "PARSE ERROR, Invalid token!", w, err)
 				return
 			}
 			if token.Valid {
@@ -42,8 +42,8 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		} else {
 			fmt.Fprintf(w, "Not Authorized")
 		}
-		role := claims["user_role"]
-		companyID, ok := claims["company_id"].(float64)
+		role := claims["userrole"]
+		companyID, ok := claims["companyid"].(float64)
 		if !ok {
 			WriteError(http.StatusInternalServerError, "ERROR", w, errors.New("interface conversion error"))
 			return
@@ -58,7 +58,9 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		if res {
 			fmt.Println("enforcer result is true")
 		} else {
-			WriteError(http.StatusForbidden, "FORBIDDEN", w, errors.New("unauthorized"))
+			//@
+			fmt.Println("@@@@@@@@",role)
+			WriteError(http.StatusForbidden, "FORBIDDEN, unauthorized", w, errors.New("unauthorized"))
 			return
 		}
 

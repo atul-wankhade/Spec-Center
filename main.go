@@ -30,6 +30,7 @@ import (
 var SECRET_KEY = []byte("gosecretkey")
 var Client *mongo.Client
 
+
 // var Key *ecdsa.PrivateKey
 
 func main() {
@@ -39,7 +40,6 @@ func main() {
 
 	// setup casbin auth rules
 	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
-	fmt.Println("S")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,15 +50,15 @@ func main() {
 
 	//setup routes
 	router.HandleFunc("/login/{companyid}", LoginHandler).Methods("POST")
-	router.HandleFunc("/adduser", AddUser).Methods("POST")
+	router.Handle("/adduser/{role}", authorization.IsAuthorized(authEnforcer,AddUser)).Methods("POST")
 	router.Handle("/{company}/article/{articleid}", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
 	// router.HandleFunc("/article/{company}", CreateArticleHandler).Methods("POST")
 	router.HandleFunc("/article/{company}", DeleteArticleHandler).Methods("DELETE")
-	router.HandleFunc("/article/{company}", AddUser).Methods("POST")
+	//router.HandleFunc("/article/{company}", AddUser).Methods("POST")
 	// router.Use(authorization.Authorizer(authEnforcer))
 
-	log.Print("Server started on localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Print("Server started on localhost:8000")
+	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
 func GetArticlesHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
@@ -77,6 +77,13 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	params := mux.Vars(request)
 	companyID, _ := strconv.Atoi((params["companyid"]))
 
+	//checking companyid is correct or not
+	if companyID != 1 && companyID != 2 && companyID != 3 {
+		response.Write([]byte(`{"response":"Wrong Company Id!"}`))
+		return
+	}
+
+
 	json.NewDecoder(request.Body).Decode(&user)
 
 	collection := Client.Database("SPEC-CENTER").Collection("user")
@@ -85,7 +92,7 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	err := collection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&dbUser)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		response.Write([]byte(`{"message":"` + "Please provide Details. "+ err.Error() + `"}`))
 		return
 	}
 
@@ -93,12 +100,10 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	err = collection.FindOne(ctx, primitive.M{"userid": dbUser.ID, "companyid": companyID}).Decode(&role)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		response.Write([]byte(`{"message":"` + "Please provide Details. "+ err.Error() + `"}` ))
 		return
 	}
-	fmt.Println("$$$$$", role)
 	userRole := role.Role
-	fmt.Println("$$$$$", userRole)
 	dbUserId := dbUser.ID
 	userPass := []byte(user.Password)
 	dbPass := []byte(dbUser.Password)
@@ -117,21 +122,47 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	response.Write([]byte(`{"token":"` + jwtToken + `"}`))
 }
 
-func AddUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
 	var user model.User
-	json.NewDecoder(r.Body).Decode(&user)
+	var role model.Roles
+	companyID := int(claims["companyid"].(float64))
+	response.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(request)
+	userRole := params["role"]
+
+	//setting default value for  role
+	if userRole !="admin" && userRole !="member" && userRole != "anonymous" {
+		userRole = "anonymous"
+	}
+
+	json.NewDecoder(request.Body).Decode(&user)
+
 	user.Password = getHash([]byte(user.Password))
 	collection := Client.Database("SPEC-CENTER").Collection("user")
-	ctx, _ := context.WithTimeout(context.Background(),
-		10*time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	result, err := collection.InsertOne(ctx, user)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
 		return
 	}
-	json.NewEncoder(w).Encode(result)
+
+	// role collection insertion
+	role.UserId = user.ID
+	role.CompanyId = companyID
+	role.Role = userRole
+
+	collection = Client.Database("SPEC-CENTER").Collection("role")
+	_ , err = collection.InsertOne(ctx, role)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		return
+	}
+	// for logs
+	fmt.Println("IMP", companyID, user,role)
+	json.NewEncoder(response).Encode(result)
 }
 
 func getHash(pwd []byte) string {
@@ -147,8 +178,8 @@ func GenerateJWT(userID int, companyID int, userRole string) (string, error) {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["authorized"] = true
 	claims["userid"] = userID
-	claims["company_id"] = companyID
-	claims["user_role"] = userRole
+	claims["companyid"] = companyID
+	claims["userrole"] = userRole
 	claims["exp"] = time.Now().Add(time.Minute * 30)
 	tokenString, err := token.SignedString(SECRET_KEY)
 	if err != nil {
