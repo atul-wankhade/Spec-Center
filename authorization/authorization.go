@@ -32,12 +32,12 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 			})
 
 			if err != nil {
-				fmt.Fprintf(w, err.Error())
+				WriteError(http.StatusInternalServerError, "PARSE ERROR", w, err)
+				return
 			}
 			if token.Valid {
 				fmt.Println(token.Claims)
 				claims = token.Claims.(jwt.MapClaims)
-				// endpoint(w, r, claims)
 			}
 		} else {
 			fmt.Fprintf(w, "Not Authorized")
@@ -57,7 +57,6 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		}
 		if res {
 			fmt.Println("enforcer result is true")
-			// endpoint(w, r, claims)
 		} else {
 			WriteError(http.StatusForbidden, "FORBIDDEN", w, errors.New("unauthorized"))
 			return
