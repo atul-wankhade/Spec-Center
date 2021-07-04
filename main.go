@@ -51,8 +51,10 @@ func main() {
 	router.HandleFunc("/login/{companyid}", LoginHandler).Methods("POST")
 	router.HandleFunc("/adduser", AddUser).Methods("POST")
 	router.Handle("/{company}/article/{articleid}", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
+	router.Handle("/{company}/article/{articleid}", authorization.IsAuthorized(authEnforcer, DeleteArticleHandler)).Methods("DELETE")
+	router.Handle("/{company}/articlerole/{articleid}", authorization.IsAuthorized(authEnforcer, UpdateArticleRoleHandler)).Methods("PATCH")
 	// router.HandleFunc("/article/{company}", CreateArticleHandler).Methods("POST")
-	router.HandleFunc("/article/{company}", DeleteArticleHandler).Methods("DELETE")
+	// router.HandleFunc("/article/{company}", DeleteArticleHandler).Methods("DELETE")
 	router.HandleFunc("/article/{company}", AddUser).Methods("POST")
 	// router.Use(authorization.Authorizer(authEnforcer))
 
@@ -157,37 +159,48 @@ func GenerateJWT(userID int, companyID int, userRole string) (string, error) {
 	return tokenString, nil
 }
 
-func DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
+func DeleteArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
 	vars := mux.Vars(r)
 	articleID := vars["articleid"]
-	article := model.Article{}
+	companyID, ok := claims["company_id"].(float64)
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get companyid from claims"))
+		return
+	}
+	userID, ok := claims["userid"].(float64)
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get userid from claims"))
+		return
+	}
+	articleRole := model.ArticleRole{}
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	collection := Client.Database("SPEC-CENTER").Collection("article")
-	decoder := collection.FindOne(ctx, primitive.M{"id": articleID})
-	err := decoder.Decode(&article)
+	database := Client.Database("SPEC-CENTER")
+	collection := database.Collection("articlerole")
+	// filter := []primitive.M{{"articleid": articleID}, {"userid": userID}, {"companyid": companyID}}
+	filter := primitive.M{"articleid": articleID, "userid": userID, "companyid": companyID}
+	fmt.Println(filter)
+	err := collection.FindOne(context.Background(), filter).Decode(&articleRole)
 	if err != nil {
-		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("error while decoding article"))
-	}
-
-	adminArray := article.Admins
-	userID := "2" //change userid
-	isAdmin := false
-
-	for _, id := range adminArray {
-		if id == userID {
-			isAdmin = true
-			break
-		}
-	}
-
-	if !isAdmin {
-		authorization.WriteError(http.StatusUnauthorized, "Unauthorized", w, errors.New("unauthorized"))
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("error while decoding article role"))
 		return
 	}
 
-	_, err = collection.DeleteOne(ctx, primitive.M{"id": articleID})
+	if articleRole.Role != "admin" || articleRole.Role != "superadmin" {
+		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", w, errors.New("unauthorized"))
+		return
+	}
+
+	articleColl := database.Collection("article")
+	_, err = articleColl.DeleteOne(ctx, primitive.M{"id": articleID})
 	if err != nil {
 		authorization.WriteError(http.StatusInternalServerError, "Delete Error", w, errors.New("error while deleting article"))
+		return
+	}
+
+	_, err = collection.DeleteMany(ctx, primitive.M{"id": articleID})
+	if err != nil {
+		authorization.WriteError(http.StatusInternalServerError, "Delete Error", w, errors.New("error while deleting article roles"))
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)

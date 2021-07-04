@@ -42,6 +42,11 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		} else {
 			fmt.Fprintf(w, "Not Authorized")
 		}
+		// expiry := claims["exp"].(time.Time)
+		// if expiry.Before(time.Now()) {
+		// 	WriteError(http.StatusInternalServerError, "TOKEN EXPIRED", w, errors.New("interface conversion error"))
+		// 	return
+		// }
 		role := claims["user_role"]
 		companyID, ok := claims["company_id"].(float64)
 		if !ok {
@@ -76,6 +81,9 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 
 			if (articleRole == "member" && r.Method == "GET") || articleRole == "admin" {
 				endpoint(w, r, claims)
+			} else {
+				WriteError(http.StatusUnauthorized, "UNAUTHORIZED", w, errors.New("user unauthorized"))
+				return
 			}
 		}
 		endpoint(w, r, claims)

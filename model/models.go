@@ -32,7 +32,5 @@ type ArticleRole struct {
 type Article struct {
 	ComapanyID string   `json:"companyid" bson:"companyid"`
 	ArticleID  string   `json:"articleid" bson:"articleid"`
-	Admins     []string `json:"admins" bson:"admins"`
-	Members    []string `json:"members" bson:"members"`
 	Body       string   `json:"body" bson:"body"`
 }
