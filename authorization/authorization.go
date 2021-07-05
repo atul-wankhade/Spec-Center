@@ -44,6 +44,8 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		}
 		role := claims["userrole"]
 		companyID, ok := claims["companyid"].(float64)
+k := claims["company_id"].(float64)
+
 		if !ok {
 			WriteError(http.StatusInternalServerError, "ERROR", w, errors.New("interface conversion error"))
 			return
@@ -78,6 +80,9 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 
 			if (articleRole == "member" && r.Method == "GET") || articleRole == "admin" {
 				endpoint(w, r, claims)
+			} else {
+				WriteError(http.StatusUnauthorized, "UNAUTHORIZED", w, errors.New("user unauthorized"))
+				return
 			}
 		}
 		endpoint(w, r, claims)
