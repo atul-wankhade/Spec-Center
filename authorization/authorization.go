@@ -44,8 +44,6 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		}
 		role := claims["userrole"]
 		companyID, ok := claims["companyid"].(float64)
-k := claims["company_id"].(float64)
-
 		if !ok {
 			WriteError(http.StatusInternalServerError, "ERROR", w, errors.New("interface conversion error"))
 			return

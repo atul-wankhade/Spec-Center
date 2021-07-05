@@ -1,16 +1,11 @@
 p, superadmin, /*, *
+
 p, admin, /role, *
 p, admin, /article, *
 p, admin, /user, GET
 
-p, member, /all_articles, GET
-
-p, admin, /all_articles, GET
-
-
-
-p, anonymous, /login, *
+p, member, /article, GET
 p, member, /logout, *
 p, member, /member/*, *
-p, admin, /article , POST
 
+p, anonymous, /login, *
