@@ -3,6 +3,7 @@ package main
 import (
 	"Spec-Center/authorization"
 	"Spec-Center/model"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -58,7 +59,6 @@ func main() {
 	router.Handle("/{company}/articlerole/{articleid}", authorization.IsAuthorized(authEnforcer, UpdateArticleRoleHandler)).Methods("PATCH")
 	// router.HandleFunc("/article/{company}", CreateArticleHandler).Methods("POST")
 	// router.HandleFunc("/article/{company}", DeleteArticleHandler).Methods("DELETE")
-	router.HandleFunc("/article/{company}", AddUser).Methods("POST")
 	// router.Use(authorization.Authorizer(authEnforcer))
 
 	log.Print("Server started on localhost:8000")
