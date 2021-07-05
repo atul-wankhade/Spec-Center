@@ -1,7 +1,7 @@
 package model
 
 type User struct {
-	ID        int    `json:"userid" bson:"id"`
+	ID        int    `json:"id" bson:"id"`
 	FirstName string `json:"firstname" bson:"firstname"`
 	LastName  string `json:"lastname" bson:"lastname"`
 	Email     string `json:"email" bson:"email"`
@@ -30,7 +30,7 @@ type ArticleRole struct {
 }
 
 type Article struct {
-	ComapanyID string   `json:"companyid" bson:"companyid"`
-	ArticleID  string   `json:"articleid" bson:"articleid"`
+	ComapanyID int   `json:"companyid" bson:"companyid"`
+	ArticleID  int   `json:"articleid" bson:"articleid"`
 	Body       string   `json:"body" bson:"body"`
 }
