@@ -30,9 +30,7 @@ type ArticleRole struct {
 }
 
 type Article struct {
-	ComapanyID string   `json:"companyid" bson:"companyid"`
-	ArticleID  string   `json:"articleid" bson:"articleid"`
-	Admins     []string `json:"admins" bson:"admins"`
-	Members    []string `json:"members" bson:"members"`
+	ComapanyID int   `json:"companyid" bson:"companyid"`
+	ArticleID  int   `json:"articleid" bson:"articleid"`
 	Body       string   `json:"body" bson:"body"`
 }

@@ -3,6 +3,9 @@ package authorization
 import (
 	"Spec-Center/model"
 	"context"
+	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"errors"
 	"fmt"
 	"log"
@@ -11,12 +14,9 @@ import (
 
 	"github.com/casbin/casbin"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
-
-var SECRET_KEY []byte
+var SECRET_KEY = []byte("gosecretkey")
 var Client *mongo.Client
 
 func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.Request, jwt.MapClaims)) http.Handler {
@@ -81,7 +81,6 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 			}
 		}
 		endpoint(w, r, claims)
-
 	})
 
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"Spec-Center/authorization"
 	"Spec-Center/model"
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -51,9 +50,14 @@ func main() {
 	//setup routes
 	router.HandleFunc("/login/{companyid}", LoginHandler).Methods("POST")
 	router.Handle("/adduser/{role}", authorization.IsAuthorized(authEnforcer,AddUser)).Methods("POST")
+	router.Handle("/all_articles", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
+
+
 	router.Handle("/{company}/article/{articleid}", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
+
+
 	// router.HandleFunc("/article/{company}", CreateArticleHandler).Methods("POST")
-	router.HandleFunc("/article/{company}", DeleteArticleHandler).Methods("DELETE")
+	//router.HandleFunc("/article/{company}", DeleteArticleHandler).Methods("DELETE")
 	//router.HandleFunc("/article/{company}", AddUser).Methods("POST")
 	// router.Use(authorization.Authorizer(authEnforcer))
 
@@ -61,11 +65,36 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
-func GetArticlesHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message: successfully  verified"}`))
-	// return
+func GetArticlesHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
+	response.Header().Set("Content-Type", "application/json")
+	companyID := int(claims["companyid"].(float64))
+
+
+	var articles []model.Article
+
+	collection := Client.Database("SPEC-CENTER").Collection("article")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+
+	cursor, err := collection.Find(ctx, bson.M{"companyid": companyID})
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message":"` + "Please provide Details. "+ err.Error() + `"}`))
+		return
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var article model.Article
+		cursor.Decode(&article)
+		articles = append(articles, article)
+	}
+	if err := cursor.Err(); err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
+		return
+	}
+	json.NewEncoder(response).Encode(articles)
 }
+
 
 func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
@@ -92,7 +121,7 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	err := collection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&dbUser)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + "Please provide Details. "+ err.Error() + `"}`))
+		response.Write([]byte(`{"message":"` + "Please provide correct Details. "+ err.Error() + `"}`))
 		return
 	}
 
@@ -189,40 +218,40 @@ func GenerateJWT(userID int, companyID int, userRole string) (string, error) {
 	return tokenString, nil
 }
 
-func DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	articleID := vars["articleid"]
-	article := model.Article{}
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	collection := Client.Database("SPEC-CENTER").Collection("article")
-	decoder := collection.FindOne(ctx, primitive.M{"id": articleID})
-	err := decoder.Decode(&article)
-	if err != nil {
-		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("error while decoding article"))
-	}
-
-	adminArray := article.Admins
-	userID := "2" //change userid
-	isAdmin := false
-
-	for _, id := range adminArray {
-		if id == userID {
-			isAdmin = true
-			break
-		}
-	}
-
-	if !isAdmin {
-		authorization.WriteError(http.StatusUnauthorized, "Unauthorized", w, errors.New("unauthorized"))
-		return
-	}
-
-	_, err = collection.DeleteOne(ctx, primitive.M{"id": articleID})
-	if err != nil {
-		authorization.WriteError(http.StatusInternalServerError, "Delete Error", w, errors.New("error while deleting article"))
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message: successfully  deleted article"}`))
-	return
-}
+//func DeleteArticleHandler(w http.ResponseWriter, r *http.Request) {
+//	vars := mux.Vars(r)
+//	articleID := vars["articleid"]
+//	article := model.Article{}
+//	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+//	collection := Client.Database("SPEC-CENTER").Collection("article")
+//	decoder := collection.FindOne(ctx, primitive.M{"id": articleID})
+//	err := decoder.Decode(&article)
+//	if err != nil {
+//		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("error while decoding article"))
+//	}
+//
+//	adminArray := article.Admins
+//	userID := "2" //change userid
+//	isAdmin := false
+//
+//	for _, id := range adminArray {
+//		if id == userID {
+//			isAdmin = true
+//			break
+//		}
+//	}
+//
+//	if !isAdmin {
+//		authorization.WriteError(http.StatusUnauthorized, "Unauthorized", w, errors.New("unauthorized"))
+//		return
+//	}
+//
+//	_, err = collection.DeleteOne(ctx, primitive.M{"id": articleID})
+//	if err != nil {
+//		authorization.WriteError(http.StatusInternalServerError, "Delete Error", w, errors.New("error while deleting article"))
+//	}
+//
+//	w.WriteHeader(http.StatusOK)
+//	w.Write([]byte(`{"message: successfully  deleted article"}`))
+//	return
+//}
