@@ -29,9 +29,25 @@ Name :- SPEC-CENTER <br/>
 3. article
 4. articlerole
 
-#### Initial Data in databse
+#### Initial Data in database
 1.Superadmin details for add company should need to insert initilly
 <br/>2. Also, there role in role collection need to be added.
+## APIs List
+
+####LOGIN & USER ADD
+POST: localhost:8080/login/{companyid} <br/>
+POST: localhost:8080/adduser <br/>
+
+####ARTICLE RELATED APIs
+GET: localhost:8080/all_articles"<br/>
+GET: localhost:8080/article<br/>
+PUT: localhost:8080/article<br/>
+DELELTE: localhost:8080/article<br/>
+
+####ROLE CHANGE :- Only superadmin can change role of other user.
+PUT: localhost:8080/articlerole/{articleid}<br/>
+PUT: localhost:8080/role
+
 ## APIs
 
 ### User login
