@@ -34,19 +34,19 @@ Name :- SPEC-CENTER <br/>
 <br/>2. Also, there role in role collection need to be added.
 ## APIs List
 
-####LOGIN & USER ADD
+#### LOGIN & USER ADD
 POST: localhost:8080/login/{companyid} <br/>
 POST: localhost:8080/adduser <br/>
 
-####ARTICLE RELATED APIs
-GET: localhost:8080/all_articles"<br/>
+#### ARTICLE RELATED APIs
+GET: localhost:8080/all_articles<br/>
 GET: localhost:8080/article<br/>
 PUT: localhost:8080/article<br/>
 DELELTE: localhost:8080/article<br/>
 
-####ROLE CHANGE :- Only superadmin can change role of other user.
-PUT: localhost:8080/articlerole/{articleid}<br/>
-PUT: localhost:8080/role
+#### ROLE CHANGE :- Only superadmin can change role of other user.<br/>
+PUT: localhost:8080/articlerole/{articleid} <br/>
+PUT: localhost:8080/role <br/>
 
 ## APIs
 
