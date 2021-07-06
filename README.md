@@ -98,10 +98,9 @@
 }
 ```
 **Response:**
-#### for articleid = 1
 ```
 {
-    "message": "Article with id: 3 is successfully deleted!"
+    "message": "Article with id: 3 is successfully updated!"
 }
 ```
 

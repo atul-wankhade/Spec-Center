@@ -55,7 +55,7 @@ func GenerateJWT(userID int, companyID int, userRole string) (string, error) {
 }
 
 // to get role of user on particular article
-func getUserArticleRole(userID int, companyID int, articleID int) string{
+func getUserArticleRole(userID int, companyID int, articleID int) string {
 	var articleRole model.ArticleRole
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := Client.Database("SPEC-CENTER").Collection("articlerole")
@@ -104,7 +104,7 @@ func main() {
 	router.Handle("/all_articles", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
 	router.Handle("/article", authorization.IsAuthorized(authEnforcer, DeleteArticleHandler)).Methods("DELETE")
 	router.Handle("/article", authorization.IsAuthorized(authEnforcer, UpdateArticleHandler)).Methods("PUT")
-	// router.HandleFunc("/article", CreateArticleHandler).Methods("POST")
+	router.Handle("/article", authorization.IsAuthorized(authEnforcer, CreateArticleHandler)).Methods("POST")
 
 	//ROLE
 	router.Handle("/articlerole/{articleid}", authorization.IsAuthorized(authEnforcer, UpdateArticleRoleHandler)).Methods("PUT")
@@ -201,13 +201,13 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 
 func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
 	response.Header().Set("Content-Type", "application/json")
-	dummyarticleID :=  request.URL.Query().Get("articleid")
+	dummyarticleID := request.URL.Query().Get("articleid")
 	articleID, err := strconv.Atoi(dummyarticleID)
-	if err!= nil {
+	if err != nil {
 		authorization.WriteError(http.StatusInternalServerError, "String conversion error", response, errors.New("unable to convert articleid into int value"))
 		return
 	}
-	fmt.Println("!!!!!!!!!!!!!!!!!!!!!",articleID)
+	fmt.Println("!!!!!!!!!!!!!!!!!!!!!", articleID)
 
 	companyID, ok := claims["companyid"].(float64)
 	if !ok {
@@ -223,12 +223,12 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 
 	//first finding out role on particular article from articlerole collection, using getUserArticleRole function
 
-	fmt.Println(userID,companyID,articleID)
+	fmt.Println(userID, companyID, articleID)
 
-	articleRole := getUserArticleRole(int(userID),int(companyID),articleID)
+	articleRole := getUserArticleRole(int(userID), int(companyID), articleID)
 
 	//for logs
-	fmt.Println("!!!!!!!!!!!",articleRole)
+	fmt.Println("!!!!!!!!!!!", articleRole)
 
 	// checking role on article, if its other than admin, superadmin then user is unauthorized to delete article
 
@@ -239,7 +239,7 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 
 	// deleting the article with given id
 	collection := Client.Database("SPEC-CENTER").Collection("article")
-	_,err = collection.DeleteOne(ctx, primitive.M{"articleid": articleID})
+	_, err = collection.DeleteOne(ctx, primitive.M{"articleid": articleID})
 	if err != nil {
 		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article"))
 		return
@@ -253,7 +253,7 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 		return
 	}
 	response.WriteHeader(http.StatusOK)
-	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully deleted!", articleID)+`"}`))
+	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully deleted!", articleID) + `"}`))
 }
 
 func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
@@ -265,9 +265,9 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 		authorization.WriteError(http.StatusBadRequest, "DECODE ERROR", response, err)
 		return
 	}
-	articleID :=  article.ArticleID
+	articleID := article.ArticleID
 
-	fmt.Println("!!!!!!!!!!!!!!!!!!!!!",articleID)
+	fmt.Println("!!!!!!!!!!!!!!!!!!!!!", articleID)
 
 	companyID, ok := claims["companyid"].(float64)
 	if !ok {
@@ -287,12 +287,12 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 
 	//first finding out role on particular article from articlerole collection, using getUserArticleRole function
 
-	fmt.Println(userID,companyID,articleID)
+	fmt.Println(userID, companyID, articleID)
 
-	articleRole := getUserArticleRole(int(userID),int(companyID),articleID)
+	articleRole := getUserArticleRole(int(userID), int(companyID), articleID)
 
 	//for logs
-	fmt.Println("!!!!!!!!!!!",articleRole)
+	fmt.Println("!!!!!!!!!!!", articleRole)
 
 	// checking role on article, if its other than admin, superadmin then user is unauthorized to delete article
 
@@ -314,7 +314,7 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 		return
 	}
 	response.WriteHeader(http.StatusOK)
-	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully updated!", articleID)+`"}`))
+	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully updated!", articleID) + `"}`))
 }
 
 func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
@@ -462,4 +462,76 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 	// for logs
 	fmt.Println("IMP", companyID, user, role)
 	json.NewEncoder(response).Encode(result)
+}
+
+func CreateArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var article model.Article
+	err := json.NewDecoder(r.Body).Decode(&article)
+	if err != nil {
+		authorization.WriteError(http.StatusBadRequest, "decode error", w, err)
+		return
+	}
+
+	userCompanyID, ok := claims["companyid"].(float64)
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "decode error", w, errors.New("unable to get companyid from claims"))
+		return
+	}
+
+	if int(userCompanyID) != article.ComapanyID {
+		authorization.WriteError(http.StatusBadRequest, "wrong company id", w, errors.New("wrong company id"))
+		return
+	}
+
+	collection := Client.Database("SPEC-CENTER").Collection("article")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	result, err := collection.InsertOne(ctx, article)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		return
+	}
+
+	go insertRolesForNewArticle(article.ArticleID, article.ComapanyID)
+
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(result)
+}
+
+func insertRolesForNewArticle(articleID, companyID int) {
+	database := Client.Database("SPEC-CENTER")
+
+	companyRoleCollection := database.Collection("role")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	filter := primitive.M{"companyid": companyID}
+
+	cursor, err := companyRoleCollection.Find(ctx, filter)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cursor.Close(ctx)
+
+	articleRoleCollection := database.Collection("articlerole")
+	var articleRole model.ArticleRole
+	var userRole model.Roles
+
+	for cursor.Next(ctx) {
+		err := cursor.Decode(&userRole)
+		if err != nil {
+			log.Fatal(err)
+		}
+		articleRole.ArticleId = articleID
+		articleRole.CompanyId = companyID
+		articleRole.Role = userRole.Role
+		articleRole.UserId = userRole.UserId
+
+		_, err = articleRoleCollection.InsertOne(ctx, articleRole)
+		if err != nil {
+			log.Fatalf("Failed to add article role for article id : %d, user id : %d, error : %w", articleID, userRole.UserId, err)
+		}
+		log.Printf("Role on new article with article id : %d, for user id : %d , for company id : %d added successfully", articleID, userRole.UserId, companyID)
+	}
+
 }
