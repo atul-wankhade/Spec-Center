@@ -57,7 +57,6 @@
 ```
 **Response:**
 ```
-
 ```
 
 #### GET all articles
@@ -69,14 +68,19 @@
 ```
 
 #### Delete article by articleid
-**API:** localhost:8080/article/{articleid}<br/>
+**API:** localhost:8080/article<br/>
 **Method:** DELETE<br/>
+**Params:**
+<br/>Key : articleid, Value: int <br/>
 **Description:**<br/> 1. superadmin,admin and member have access to this api, checked by "Cashbin"<br/>
-<br/>2. After accesing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then user allow to delete that article.
-<br/>3. After deleting the article <br/>
+<br/>2. After accesing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to delete that article.
+<br/>3. After deleting the article all entries related to that articleid in articlerole collection will be deleted<br/>
 **Response:**
+#### for articleid = 1
 ```
-
+{
+    "message": "Article with id: 1 is successfully deleted!"
+}
 ```
 ### Get TODO by ID
 #### PART-1

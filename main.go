@@ -54,6 +54,33 @@ func GenerateJWT(userID int, companyID int, userRole string) (string, error) {
 	return tokenString, nil
 }
 
+// to get role of user on particular article
+func getUserArticleRole(userID int, companyID int, articleID int) string{
+	var articleRole model.ArticleRole
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	collection := Client.Database("SPEC-CENTER").Collection("articlerole")
+	filter := primitive.M{"articleid": articleID, "userid": int(userID), "companyid": int(companyID)}
+	err := collection.FindOne(ctx, filter).Decode(&articleRole)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return articleRole.Role
+}
+
+// for changing user role on all article when company role for user is changed.
+func updateUserArticleRoles(userID, companyID int, updatedRole string) {
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	collection := Client.Database("SPEC-CENTER").Collection("articlerole")
+	filter := primitive.M{"userid": userID, "companyid": companyID}
+	opts := options.Update().SetUpsert(true)
+	update := bson.D{{"$set", bson.D{{"role", updatedRole}}}}
+
+	_, err := collection.UpdateMany(ctx, filter, update, opts)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func main() {
 	authorization.SECRET_KEY = SECRET_KEY
 	authorization.Client = Client
@@ -81,7 +108,6 @@ func main() {
 	//ROLE
 	router.Handle("/articlerole/{articleid}", authorization.IsAuthorized(authEnforcer, UpdateArticleRoleHandler)).Methods("PUT")
 	router.Handle("/role", authorization.IsAuthorized(authEnforcer, UpdateCompanyRoleHandler)).Methods("PUT")
-
 
 	// router.Use(authorization.Authorizer(authEnforcer))
 	log.Print("Server started on localhost:8040")
@@ -173,6 +199,7 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 }
 
 func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
+	response.Header().Set("Content-Type", "application/json")
 	dummyarticleID :=  request.URL.Query().Get("articleid")
 	articleID, err := strconv.Atoi(dummyarticleID)
 	if err!= nil {
@@ -191,47 +218,41 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get userid from claims"))
 		return
 	}
-	var articleRole model.ArticleRole
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 
-	//first finding out role on particular article from articlerole collection
+	//first finding out role on particular article from articlerole collection, using getUserArticleRole function
 
 	fmt.Println(userID,companyID,articleID)
-	collection := Client.Database("SPEC-CENTER").Collection("articlerole")
-	err = collection.FindOne(ctx, primitive.M{"articleid": articleID, "userid": int(userID), "companyid": int(companyID)}).Decode(&articleRole)
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + "Please provide correct Details. "+ err.Error() + `"}` ))
-		return
-	}
+
+	articleRole := getUserArticleRole(int(userID),int(companyID),articleID)
 
 	//for logs
 	fmt.Println("!!!!!!!!!!!",articleRole)
 
 	// checking role on article, if its other than admin, superadmin then user is unauthorized to delete article
 
-	if articleRole.Role != "admin" && articleRole.Role != "superadmin" {
+	if articleRole != "admin" && articleRole != "superadmin" {
 		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", response, errors.New("unauthorized"))
 		return
 	}
 
 	// deleting the article with given id
-	collection2 := Client.Database("SPEC-CENTER").Collection("article")
-	_,err = collection2.DeleteOne(ctx, primitive.M{"articleid": articleID})
+	collection := Client.Database("SPEC-CENTER").Collection("article")
+	_,err = collection.DeleteOne(ctx, primitive.M{"articleid": articleID})
 	if err != nil {
 		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article"))
 		return
 	}
 
 	// As article is deleted, deleting role on that articles from articlerole collection
-	_, err = collection.DeleteMany(ctx, primitive.M{"articleid": articleID})
+	collection1 := Client.Database("SPEC-CENTER").Collection("articlerole")
+	_, err = collection1.DeleteMany(ctx, primitive.M{"articleid": articleID})
 	if err != nil {
 		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article roles"))
 		return
 	}
 	response.WriteHeader(http.StatusOK)
-	response.Write([]byte(`{"message: successfully  deleted article"}`))
-	return
+	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully deleted!", articleID)+`"}`))
 }
 
 func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
@@ -336,20 +357,6 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message":"` + fmt.Sprintf("Role for userid:%d  is changed to: %s", role.UserId, role.Role) + `"}`))
-}
-
-
-func updateUserArticleRoles(userID, companyID int, updatedRole string) {
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	collection := Client.Database("SPEC-CENTER").Collection("articlerole")
-	filter := primitive.M{"userid": userID, "companyid": companyID}
-	opts := options.Update().SetUpsert(true)
-	update := bson.D{{"$set", bson.D{{"role", updatedRole}}}}
-
-	_, err := collection.UpdateMany(ctx, filter, update, opts)
-	if err != nil {
-		log.Fatal(err)
-	}
 }
 
 func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
