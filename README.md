@@ -83,4 +83,25 @@
     "message": "Article with id: 1 is successfully deleted!"
 }
 ```
+#### Update article by articleid
+**API:** localhost:8080/article<br/>
+**Method:** PUT<br/>
+**Description:**
+<br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".
+<br/>2. After accesing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to update that article.
+**Payload**:
+```
+{
+    "articleid":3,
+    "companyid":1,
+    "body": "Blockchain Learning"
+}
+```
+**Response:**
+#### for articleid = 1
+```
+{
+    "message": "Article with id: 3 is successfully deleted!"
+}
+```
 

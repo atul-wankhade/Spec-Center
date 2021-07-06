@@ -103,6 +103,7 @@ func main() {
 	// ARTICLE
 	router.Handle("/all_articles", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
 	router.Handle("/article", authorization.IsAuthorized(authEnforcer, DeleteArticleHandler)).Methods("DELETE")
+	router.Handle("/article", authorization.IsAuthorized(authEnforcer, UpdateArticleHandler)).Methods("PUT")
 	// router.HandleFunc("/article", CreateArticleHandler).Methods("POST")
 
 	//ROLE
@@ -253,6 +254,67 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 	}
 	response.WriteHeader(http.StatusOK)
 	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully deleted!", articleID)+`"}`))
+}
+
+func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
+	response.Header().Set("Content-Type", "application/json")
+	var article model.Article
+
+	err := json.NewDecoder(request.Body).Decode(&article)
+	if err != nil {
+		authorization.WriteError(http.StatusBadRequest, "DECODE ERROR", response, err)
+		return
+	}
+	articleID :=  article.ArticleID
+
+	fmt.Println("!!!!!!!!!!!!!!!!!!!!!",articleID)
+
+	companyID, ok := claims["companyid"].(float64)
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get companyid from claims"))
+		return
+	}
+
+	if article.ComapanyID != int(companyID) {
+		authorization.WriteError(http.StatusBadRequest, "Please provide correct company id ", response, errors.New("wrong companyid"))
+		return
+	}
+	userID, ok := claims["userid"].(float64)
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get userid from claims"))
+		return
+	}
+
+	//first finding out role on particular article from articlerole collection, using getUserArticleRole function
+
+	fmt.Println(userID,companyID,articleID)
+
+	articleRole := getUserArticleRole(int(userID),int(companyID),articleID)
+
+	//for logs
+	fmt.Println("!!!!!!!!!!!",articleRole)
+
+	// checking role on article, if its other than admin, superadmin then user is unauthorized to delete article
+
+	if articleRole != "admin" && articleRole != "superadmin" {
+		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", response, errors.New("unauthorized"))
+		return
+	}
+
+	// Updating the article with given id
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	collection := Client.Database("SPEC-CENTER").Collection("article")
+	filter := primitive.M{"articleid": articleID, "companyid": int(companyID)}
+	opts := options.Update().SetUpsert(true)
+	update := bson.D{{"$set", bson.D{{"body", article.Body}}}}
+
+	_, err = collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		authorization.WriteError(http.StatusInternalServerError, "update error", response, errors.New("update error"))
+		return
+	}
+	response.WriteHeader(http.StatusOK)
+	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully updated!", articleID)+`"}`))
 }
 
 func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
