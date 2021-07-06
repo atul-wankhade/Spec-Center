@@ -1,11 +1,12 @@
 p, superadmin, /*, *
 
-p, admin, /role, *
-p, admin, /article, *
-p, admin, /user, GET
+
+p, admin, /article, GET
+p, admin, /article, DELETE
+p, admin, /article, PUT
+
 
 p, member, /article, GET
-p, member, /logout, *
-p, member, /member/*, *
+p, member, /article, DELETE
+p, member, /article, PUT
 
-p, anonymous, /login, *

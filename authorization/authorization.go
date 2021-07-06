@@ -1,16 +1,16 @@
 package authorization
 
 import (
-	"Spec-Center/model"
-	"context"
-	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	//"Spec-Center/model"
+	//"context"
+	//"go.mongodb.org/mongo-driver/bson/primitive"
+	//"time"
 
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
+	//"strings"
 
 	"github.com/casbin/casbin"
 	"github.com/dgrijalva/jwt-go"
@@ -21,7 +21,7 @@ var Client *mongo.Client
 
 func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.Request, jwt.MapClaims)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
+		//vars := mux.Vars(r)
 		var claims jwt.MapClaims
 		if r.Header["Token"] != nil {
 			token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
@@ -43,11 +43,11 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 			fmt.Fprintf(w, "Not Authorized")
 		}
 		role := claims["userrole"]
-		companyID, ok := claims["companyid"].(float64)
-		if !ok {
-			WriteError(http.StatusInternalServerError, "ERROR", w, errors.New("interface conversion error"))
-			return
-		}
+		//companyID, ok := claims["companyid"].(float64)
+		//if !ok {
+		//	WriteError(http.StatusInternalServerError, "ERROR", w, errors.New("interface conversion error"))
+		//	return
+		//}
 
 		//casbin enforce
 		res, err := e.EnforceSafe(role, r.URL.Path, r.Method)
@@ -64,26 +64,34 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 			return
 		}
 
-		if role != "superadmin" && strings.Contains(r.URL.Path, "/article") {
-			var article model.ArticleRole
-			articleID := vars["articleid"]
-			filter := []primitive.M{{"articleid": articleID}, {"companyid": companyID}}
-			collection := Client.Database("SPEC-CENTER").Collection("articlerole")
-			err := collection.FindOne(context.Background(), primitive.M{"$and": filter}).Decode(&article)
-			if err != nil {
-				WriteError(http.StatusInternalServerError, "DECODE ERROR", w, errors.New("unable to decode article"))
-				return
-			}
-			articleRole := article.Role
-
-			if (articleRole == "member" && r.Method == "GET") || articleRole == "admin" {
-				endpoint(w, r, claims)
-			} else {
-				WriteError(http.StatusUnauthorized, "UNAUTHORIZED", w, errors.New("user unauthorized"))
-				return
-			}
-		}
+		//if role != "superadmin" && strings.Contains(r.URL.Path, "/article") {
+		//	var article model.ArticleRole
+		//	articleID :=  r.URL.Query().Get("articleid")
+		//	fmt.Println("#########",articleID)
+		//	fmt.Println("#########@@@@@@@@",companyID, int(companyID))
+		////	filter := []primitive.M{{"articleid": articleID}, {"companyid": companyID}}
+		//	collection := Client.Database("SPEC-CENTER").Collection("articlerole")
+		//	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+		//	err := collection.FindOne(ctx, primitive.M{"articleid": articleID,"companyid": companyID}).Decode(&article)
+		//	if err != nil {
+		//		WriteError(http.StatusInternalServerError, "DECODE ERROR", w, errors.New("unable to decode article"))
+		//		return
+		//	}
+		//	fmt.Println("cheking error ",articleID)
+		//
+		//
+		//	articleRole := article.Role
+		//
+		//	if (articleRole == "member" && r.Method == "GET") || articleRole == "admin" {
+		//		endpoint(w, r, claims)
+		//	} else {
+		//		WriteError(http.StatusUnauthorized, "UNAUTHORIZED", w, errors.New("user unauthorized"))
+		//		return
+		//	}
+		//}
+		fmt.Println("FINISHED")
 		endpoint(w, r, claims)
+
 	})
 
 }

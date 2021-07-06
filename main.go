@@ -69,19 +69,21 @@ func main() {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	Client, _ = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
 
-	//setup routes
+	//LOGIN & USER ADD
 	router.HandleFunc("/login/{companyid}", LoginHandler).Methods("POST")
 	router.Handle("/adduser/{role}", authorization.IsAuthorized(authEnforcer, AddUser)).Methods("POST")
-	router.Handle("/all_articles", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
 
-	router.Handle("/{company}/article/{articleid}", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
-	router.Handle("/{company}/article/{articleid}", authorization.IsAuthorized(authEnforcer, DeleteArticleHandler)).Methods("DELETE")
+	// ARTICLE
+	router.Handle("/all_articles", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
+	router.Handle("/article", authorization.IsAuthorized(authEnforcer, DeleteArticleHandler)).Methods("DELETE")
+	// router.HandleFunc("/article", CreateArticleHandler).Methods("POST")
+
+	//ROLE
 	router.Handle("/articlerole/{articleid}", authorization.IsAuthorized(authEnforcer, UpdateArticleRoleHandler)).Methods("PUT")
 	router.Handle("/role", authorization.IsAuthorized(authEnforcer, UpdateCompanyRoleHandler)).Methods("PUT")
-	// router.HandleFunc("/article/{company}", CreateArticleHandler).Methods("POST")
-	// router.HandleFunc("/article/{company}", DeleteArticleHandler).Methods("DELETE")
-	// router.Use(authorization.Authorizer(authEnforcer))
 
+
+	// router.Use(authorization.Authorizer(authEnforcer))
 	log.Print("Server started on localhost:8040")
 	log.Fatal(http.ListenAndServe(":8040", router))
 }
@@ -124,12 +126,6 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 
 	params := mux.Vars(request)
 	companyID, _ := strconv.Atoi((params["companyid"]))
-
-	//checking companyid is correct or not
-	// if companyID != 1 && companyID != 2 && companyID != 3 {
-	// 	response.Write([]byte(`{"response":"Wrong Company Id!"}`))
-	// 	return
-	// }
 
 	json.NewDecoder(request.Body).Decode(&user)
 
@@ -176,95 +172,66 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	response.Write([]byte(`{"token":"` + jwtToken + `"}`))
 }
 
-func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
-	var user model.User
-	var role model.Roles
-	companyID := int(claims["companyid"].(float64))
-	response.Header().Set("Content-Type", "application/json")
-
-	params := mux.Vars(request)
-	userRole := params["role"]
-
-	//setting default value for  role
-	if userRole != "admin" && userRole != "member" && userRole != "anonymous" {
-		userRole = "anonymous"
-	}
-
-	json.NewDecoder(request.Body).Decode(&user)
-
-	user.Password = getHash([]byte(user.Password))
-	collection := Client.Database("SPEC-CENTER").Collection("user")
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	result, err := collection.InsertOne(ctx, user)
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
+func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
+	dummyarticleID :=  request.URL.Query().Get("articleid")
+	articleID, err := strconv.Atoi(dummyarticleID)
+	if err!= nil {
+		authorization.WriteError(http.StatusInternalServerError, "String conversion error", response, errors.New("unable to convert articleid into int value"))
 		return
 	}
+	fmt.Println("!!!!!!!!!!!!!!!!!!!!!",articleID)
 
-	// role collection insertion
-	role.UserId = user.ID
-	role.CompanyId = companyID
-	role.Role = userRole
-
-	collection = Client.Database("SPEC-CENTER").Collection("role")
-	_, err = collection.InsertOne(ctx, role)
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
-		return
-	}
-	// for logs
-	fmt.Println("IMP", companyID, user, role)
-	json.NewEncoder(response).Encode(result)
-}
-
-func DeleteArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
-	vars := mux.Vars(r)
-	articleID := vars["articleid"]
 	companyID, ok := claims["companyid"].(float64)
 	if !ok {
-		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get companyid from claims"))
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get companyid from claims"))
 		return
 	}
 	userID, ok := claims["userid"].(float64)
 	if !ok {
-		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get userid from claims"))
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get userid from claims"))
 		return
 	}
-	articleRole := model.ArticleRole{}
+	var articleRole model.ArticleRole
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	database := Client.Database("SPEC-CENTER")
-	collection := database.Collection("articlerole")
-	// filter := []primitive.M{{"articleid": articleID}, {"userid": userID}, {"companyid": companyID}}
-	filter := primitive.M{"articleid": articleID, "userid": userID, "companyid": companyID}
-	fmt.Println(filter)
-	err := collection.FindOne(context.Background(), filter).Decode(&articleRole)
+
+	//first finding out role on particular article from articlerole collection
+
+	fmt.Println(userID,companyID,articleID)
+	collection := Client.Database("SPEC-CENTER").Collection("articlerole")
+	err = collection.FindOne(ctx, primitive.M{"articleid": articleID, "userid": int(userID), "companyid": int(companyID)}).Decode(&articleRole)
 	if err != nil {
-		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("error while decoding article role"))
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message":"` + "Please provide correct Details. "+ err.Error() + `"}` ))
 		return
 	}
 
-	if articleRole.Role != "admin" || articleRole.Role != "superadmin" {
-		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", w, errors.New("unauthorized"))
+	//for logs
+	fmt.Println("!!!!!!!!!!!",articleRole)
+
+	// checking role on article, if its other than admin, superadmin then user is unauthorized to delete article
+
+	if articleRole.Role != "admin" && articleRole.Role != "superadmin" {
+		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", response, errors.New("unauthorized"))
 		return
 	}
 
-	articleColl := database.Collection("article")
-	_, err = articleColl.DeleteOne(ctx, primitive.M{"id": articleID})
+	// deleting the article with given id
+	collection2 := Client.Database("SPEC-CENTER").Collection("article")
+	_,err = collection2.DeleteOne(ctx, primitive.M{"articleid": articleID})
 	if err != nil {
-		authorization.WriteError(http.StatusInternalServerError, "Delete Error", w, errors.New("error while deleting article"))
+		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article"))
 		return
 	}
 
-	_, err = collection.DeleteMany(ctx, primitive.M{"id": articleID})
+	// As article is deleted, deleting role on that articles from articlerole collection
+	_, err = collection.DeleteMany(ctx, primitive.M{"articleid": articleID})
 	if err != nil {
-		authorization.WriteError(http.StatusInternalServerError, "Delete Error", w, errors.New("error while deleting article roles"))
+		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article roles"))
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message: successfully  deleted article"}`))
+	response.WriteHeader(http.StatusOK)
+	response.Write([]byte(`{"message: successfully  deleted article"}`))
+	return
 }
 
 func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
@@ -369,8 +336,8 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message":"` + fmt.Sprintf("Role for userid:%d  is changed to: %s", role.UserId, role.Role) + `"}`))
-
 }
+
 
 func updateUserArticleRoles(userID, companyID int, updatedRole string) {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
@@ -383,5 +350,47 @@ func updateUserArticleRoles(userID, companyID int, updatedRole string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
+func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
+	var user model.User
+	var role model.Roles
+	companyID := int(claims["companyid"].(float64))
+	response.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(request)
+	userRole := params["role"]
+
+	//setting default value for  role
+	if userRole != "admin" && userRole != "member" && userRole != "anonymous" {
+		userRole = "anonymous"
+	}
+
+	json.NewDecoder(request.Body).Decode(&user)
+
+	user.Password = getHash([]byte(user.Password))
+	collection := Client.Database("SPEC-CENTER").Collection("user")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	result, err := collection.InsertOne(ctx, user)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		return
+	}
+
+	// role collection insertion
+	role.UserId = user.ID
+	role.CompanyId = companyID
+	role.Role = userRole
+
+	collection = Client.Database("SPEC-CENTER").Collection("role")
+	_, err = collection.InsertOne(ctx, role)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		return
+	}
+	// for logs
+	fmt.Println("IMP", companyID, user, role)
+	json.NewEncoder(response).Encode(result)
 }
