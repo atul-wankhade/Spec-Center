@@ -18,6 +18,20 @@
 9. A User with no access in Company shouldn’t see the articles.
 10. Use Casbin for Authorisation Roles.
 11. Write rest API to perform all operations. No need for html pages.
+## Initial Setup
+
+### Mongo
+####Database 
+Name :- SPEC-CENTER <br/>
+####Collections
+1. user
+2. role
+3. article
+4. articlerole
+
+#### Initial Data in databse
+1.Superadmin details for add company should need to insert initilly
+<br/>2. Also, there role in role collection need to be added.
 ## APIs
 
 ### User login
