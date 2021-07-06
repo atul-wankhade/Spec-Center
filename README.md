@@ -42,9 +42,12 @@
 #### following api is works for same logged in company.
 
 ### Add User
-**API:** localhost:8080/adduser/{role}<br/>
+**API:** localhost:8080/adduser<br/>
 **Method:** POST<br/>
-**Description:** Only superadmin can add user in company, by giving role for user in header parameter<br/>
+**Description:** <br/>1. Only superadmin can add user in company, by giving role for user in json body.
+<br/> 2. Once user is added in company, same time in role collection we are updating role of that user in company.
+<br/> 3. After that, updating the articlerole collection for each article in company with newly user role on each article(articlerole).
+
 **Payload**:
 ```
 {
@@ -53,10 +56,14 @@
     "lastname": <lastname>,
     "email": <email>
     "password" : <password>
+    "role" : <role for new user in comapany>
 }
 ```
 **Response:**
 ```
+{
+    "message": "User with userid: 21  is added to company having id: 1 with role: admin"
+}
 ```
 
 #### GET all articles
@@ -65,6 +72,22 @@
 **Description:** To Get all articles for login company, only admin, member and superadmin can see all articles<br/>
 **Response:**
 ```
+[
+    {
+        "companyid": 1,
+        "articleid": 3,
+        "body": "Blockchain Learning"
+    },
+    {
+        "companyid": 1,
+        "articleid": 10,
+        "body": "Article by bhushan"
+    },
+    .
+    .
+    .
+    .
+]
 ```
 
 #### Delete article by articleid
@@ -77,7 +100,6 @@
 <br/>2. After accesing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to delete that article.
 <br/>3. After deleting the article all entries related to that articleid in articlerole collection will be deleted<br/>
 **Response:**
-#### for articleid = 1
 ```
 {
     "message": "Article with id: 1 is successfully deleted!"

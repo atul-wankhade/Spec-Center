@@ -480,8 +480,6 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("Wrong userid"))
 		return
 	}
-	// for logs
-	fmt.Println("!!",userId)
 
 	user.ID =  int(userId)
 	user.FirstName = fmt.Sprintf("%v", keyVal["firstname"])
@@ -506,7 +504,6 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
 		return
 	}
-
 	// user role insertion in roles collection
 	role.UserId = user.ID
 	role.CompanyId = companyID
