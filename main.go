@@ -5,6 +5,7 @@ import (
 	"Spec-Center/model"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strconv"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -98,7 +99,7 @@ func main() {
 
 	//LOGIN & USER ADD
 	router.HandleFunc("/login/{companyid}", LoginHandler).Methods("POST")
-	router.Handle("/adduser/{role}", authorization.IsAuthorized(authEnforcer, AddUser)).Methods("POST")
+	router.Handle("/adduser", authorization.IsAuthorized(authEnforcer, AddUser)).Methods("POST")
 
 	// ARTICLE
 	router.Handle("/all_articles", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
@@ -106,7 +107,7 @@ func main() {
 	router.Handle("/article", authorization.IsAuthorized(authEnforcer, UpdateArticleHandler)).Methods("PUT")
 	router.Handle("/article", authorization.IsAuthorized(authEnforcer, CreateArticleHandler)).Methods("POST")
 
-	//ROLE
+	//ROLE CHANGE :- only superadmin can change role of other user.
 	router.Handle("/articlerole/{articleid}", authorization.IsAuthorized(authEnforcer, UpdateArticleRoleHandler)).Methods("PUT")
 	router.Handle("/role", authorization.IsAuthorized(authEnforcer, UpdateCompanyRoleHandler)).Methods("PUT")
 
@@ -421,49 +422,6 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 	w.Write([]byte(`{"message":"` + fmt.Sprintf("Role for userid:%d  is changed to: %s", role.UserId, role.Role) + `"}`))
 }
 
-func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
-	var user model.User
-	var role model.Roles
-	companyID := int(claims["companyid"].(float64))
-	response.Header().Set("Content-Type", "application/json")
-
-	params := mux.Vars(request)
-	userRole := params["role"]
-
-	//setting default value for  role
-	if userRole != "admin" && userRole != "member" && userRole != "anonymous" {
-		userRole = "anonymous"
-	}
-
-	json.NewDecoder(request.Body).Decode(&user)
-
-	user.Password = getHash([]byte(user.Password))
-	collection := Client.Database("SPEC-CENTER").Collection("user")
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	result, err := collection.InsertOne(ctx, user)
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
-		return
-	}
-
-	// role collection insertion
-	role.UserId = user.ID
-	role.CompanyId = companyID
-	role.Role = userRole
-
-	collection = Client.Database("SPEC-CENTER").Collection("role")
-	_, err = collection.InsertOne(ctx, role)
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
-		return
-	}
-	// for logs
-	fmt.Println("IMP", companyID, user, role)
-	json.NewEncoder(response).Encode(result)
-}
-
 func CreateArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -499,7 +457,111 @@ func CreateArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.Map
 	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(result)
 }
+func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
+	response.Header().Set("Content-Type", "application/json")
+	var user model.User
+	var role model.Roles
+	keyVal := make(map[string]interface{})
+	companyID := int(claims["companyid"].(float64))
 
+	body, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		panic(err.Error())
+	}
+	err = json.Unmarshal(body, &keyVal)
+	if err != nil {
+		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST", response, err)
+		return
+	}
+
+	userRole := fmt.Sprintf("%v", keyVal["role"])
+	userId, ok := keyVal["id"].(float64)
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("Wrong userid"))
+		return
+	}
+	// for logs
+	fmt.Println("!!",userId)
+
+	user.ID =  int(userId)
+	user.FirstName = fmt.Sprintf("%v", keyVal["firstname"])
+	user.LastName = fmt.Sprintf("%v", keyVal["lastname"])
+	user.Password = fmt.Sprintf("%v", keyVal["password"])
+	user.Email = fmt.Sprintf("%v", keyVal["email"])
+
+	// for logs
+	fmt.Println("!@!@!@!@",keyVal, user)
+
+	//setting default value for  role
+	if userRole != "admin" && userRole != "member" && userRole != "anonymous" {
+		userRole = "anonymous"
+	}
+
+	user.Password = getHash([]byte(user.Password))
+	collection := Client.Database("SPEC-CENTER").Collection("user")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	_, err = collection.InsertOne(ctx, user)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		return
+	}
+
+	// user role insertion in roles collection
+	role.UserId = user.ID
+	role.CompanyId = companyID
+	role.Role = userRole
+
+	collection = Client.Database("SPEC-CENTER").Collection("role")
+	_, err = collection.InsertOne(ctx, role)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		return
+	}
+
+	go insertAllArticleRoleForNewUser(user.ID, companyID, userRole)
+
+	response.WriteHeader(http.StatusAccepted)
+	response.Write([]byte(`{"message":"` + fmt.Sprintf("User with userid: %d is added to company having id: %d with role: %s", int(userId),companyID,userRole) + `"}`))
+}
+
+// Inserting articlerole for newly created user for all article present in company
+func insertAllArticleRoleForNewUser(userID int, companyID int, role string) {
+	database := Client.Database("SPEC-CENTER")
+	companyRoleCollection := database.Collection("article")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	filter := primitive.M{"companyid": companyID}
+
+	cursor, err := companyRoleCollection.Find(ctx, filter)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cursor.Close(ctx)
+
+	articleRoleCollection := database.Collection("articlerole")
+	var articleRole model.ArticleRole
+	var article model.Article
+
+	for cursor.Next(ctx) {
+		err := cursor.Decode(&article)
+		if err != nil {
+			log.Fatal(err)
+		}
+		articleRole.ArticleId = article.ArticleID
+		articleRole.CompanyId = companyID
+		articleRole.Role = role
+		articleRole.UserId =  userID
+
+		_, err = articleRoleCollection.InsertOne(ctx, articleRole)
+		if err != nil {
+			log.Fatalf("Failed to add article role for article id : %d, user id : %d, error : %w", article.ArticleID, userID, err)
+		}
+		log.Printf("ArticleRole for  article id : %d, for user id : %d , for company id : %d added successfully", article.ArticleID, userID, companyID)
+	}
+}
+
+// Inserting articlerole for newly created article for all user present in company with there role
 func insertRolesForNewArticle(articleID, companyID int) {
 	database := Client.Database("SPEC-CENTER")
 
@@ -533,5 +595,4 @@ func insertRolesForNewArticle(articleID, companyID int) {
 		}
 		log.Printf("Role on new article with article id : %d, for user id : %d , for company id : %d added successfully", articleID, userRole.UserId, companyID)
 	}
-
 }
