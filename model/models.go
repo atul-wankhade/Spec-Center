@@ -1,5 +1,12 @@
 package model
 
+import "go.mongodb.org/mongo-driver/mongo"
+
+
+type Database struct{
+	Client *mongo.Client
+}
+
 type User struct {
 	ID        int    `json:"id" bson:"id"`
 	FirstName string `json:"firstname" bson:"firstname"`
@@ -30,7 +37,7 @@ type ArticleRole struct {
 }
 
 type Article struct {
-	ComapanyID int   `json:"companyid" bson:"companyid"`
-	ArticleID  int   `json:"articleid" bson:"articleid"`
-	Body       string   `json:"body" bson:"body"`
+	ComapanyID int    `json:"companyid" bson:"companyid"`
+	ArticleID  int    `json:"articleid" bson:"articleid"`
+	Body       string `json:"body" bson:"body"`
 }
