@@ -105,7 +105,6 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 
 	var role model.Roles
 
-	fmt.Println("#####################")
 	client := db.InitializeDatabase()
 	defer client.Disconnect(context.Background())
 	collection := client.Database("SPEC-CENTER").Collection("role")
@@ -113,25 +112,26 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 	defer cancel()
 	err = collection.FindOne(ctx, primitive.M{"userid": articleRole.UserId, "companyid": articleRole.CompanyId}).Decode(&role)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message":"` + "Please provide correct Details. " + err.Error() + `"}`))
+		authorization.WriteError(http.StatusBadRequest, "Please provide correct userid!, user not present", w, err)
 		return
 	}
-	fmt.Println("!!!!!!!!!!!!!!!!!!!!!", role)
 	if role.Role == "anonymous" {
 		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST:- anonymous user can't be given article access", w, errors.New("BAD REQUEST"))
 		return
 	}
 
-	fmt.Println("%%%%%%%%%%%%%%")
 	collection1 := client.Database("SPEC-CENTER").Collection("articlerole")
-	opts := options.Update().SetUpsert(true)
+	opts := options.Update().SetUpsert(false)
 	filter := primitive.M{"userid": articleRole.UserId, "companyid": articleRole.CompanyId, "articleid": articleRole.ArticleId}
 	update := bson.D{{"$set", bson.D{{"role", articleRole.Role}}}}
 
-	_, err = collection1.UpdateOne(ctx, filter, update, opts)
+	result, err := collection1.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
 		authorization.WriteError(http.StatusInternalServerError, "update error", w, errors.New("update error"))
+		return
+	}
+	if result.ModifiedCount == 0{
+		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST, Wrong Article Id", w, errors.New("BAD REQUEST, article not present"))
 		return
 	}
 	w.WriteHeader(http.StatusOK)

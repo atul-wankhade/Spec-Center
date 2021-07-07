@@ -22,9 +22,9 @@
 
 ### Mongo
 #### Database
-Name :- SPEC-CENTER <br/>
+#### Name :- SPEC-CENTER <br/>
 #### Collections
-1. user :- Struct corresponding to database entity is as below.
+#### 1. user :- Struct corresponding to database entity is as below.
    ```
    type User struct {
       ID        int    `json:"id" bson:"id"`
@@ -34,7 +34,7 @@ Name :- SPEC-CENTER <br/>
       Password  string `json:"password" bson:"password"`
    }
    ```
-2. role :- Struct corresponding to database entity is as below.
+#### 2. role :- Struct corresponding to database entity is as below.
    ```
    type Roles struct {
        UserId    int    `json:"userid" bson:"userid"`
@@ -42,7 +42,7 @@ Name :- SPEC-CENTER <br/>
        Role      string `json:"role" bson:"role"`
    }
    ```
-3. article:- Struct corresponding to database entity is as below.
+#### 3. article:- Struct corresponding to database entity is as below.
    ```
    type Article struct {
       ComapanyID int   `json:"companyid" bson:"companyid"`
@@ -50,7 +50,7 @@ Name :- SPEC-CENTER <br/>
       Body       string   `json:"body" bson:"body"`
    } 
    ```
-4. articlerole:- Struct corresponding to database entity is as below.
+#### 4. articlerole:- Struct corresponding to database entity is as below.
    ```
    type ArticleRole struct {
        UserId    int    `json:"userid" bson:"userid"`
@@ -59,7 +59,7 @@ Name :- SPEC-CENTER <br/>
        Role      string `json:"role" bson:"role"`
    }
    ```
-5. company:- Struct corresponding to database entity is as below.
+#### 5. company:- Struct corresponding to database entity is as below.
    ```
    type Company struct {
        ID         string   `json:"id" bson:"id"`
@@ -67,11 +67,10 @@ Name :- SPEC-CENTER <br/>
    }
    ```
 
-
-
 #### Initial Data in database
-1.Superadmin details for add company should need to insert initilly
-<br/>2. Also, there role in role collection need to be added.
+<br/>1. superadmin user details for each company should need to insert initially.
+<br/>2. Also, same user with superadmin role need to be added in role collection.
+
 ## APIs List
 
 #### Login in Company
@@ -100,14 +99,14 @@ Name :- SPEC-CENTER <br/>
    DELELTE: localhost:8080/article
 ```
 ### ROLE CHANGE APIs
-#### Only superadmin can change role of other user.<br/>
-#### To change role of user in company
+
+#### To change role of user in company :- Only superadmin can change role of other user.<br/>
 ```
    PUT: localhost:8080/role <br/>
 ```
 #### Only superadmin can change role of other user on particular article.<br/>
 ```
-PUT: localhost:8080/articlerole/{articleid} <br/>
+   PUT: localhost:8080/articlerole/{articleid} <br/>
 ```
 
 
@@ -138,7 +137,9 @@ PUT: localhost:8080/articlerole/{articleid} <br/>
 **API:** localhost:8080/adduser<br/>
 **Method:** POST<br/>
 **Description:** <br/>1. Only superadmin can add user in company, by giving role for user in json body.
-<br/> 2. Once user is added in company, same time in role collection we are updating role of that user in company.
+
+<br/> 2. Once user is added in company, same time in role collection we are updating role of that user in company.<br/>
+
 <br/> 3. After that, updating the articlerole collection for each article in company with newly user role on each article(articlerole).
 
 **Payload**:
@@ -162,7 +163,7 @@ PUT: localhost:8080/articlerole/{articleid} <br/>
 #### GET all articles
 **API:** localhost:8080/all_articles<br/>
 **Method:** GET<br/>
-**Description:** To Get all articles for login company, only admin, member and superadmin can see all articles<br/>
+**Description:** <br/>To Get all articles for login company, only admin, member and superadmin can see all articles<br/>
 **Response:**
 ```
 [
@@ -186,8 +187,8 @@ PUT: localhost:8080/articlerole/{articleid} <br/>
 **API:** localhost:8080/article<br/>
 **Method:** POST<br/>
 **Description:**
-<br/>1. Superadmin have access to this api, and it's checked by "Cashbin".
-<br/>2. After adding article in article collection, role for that particular article for all user is add by performing insert query on articlerole collection.<br/>
+<br/>1. Only superadmin have access to this api, and it's checked by "Cashbin".<br/>
+<br/>2. After adding article in article collection, role for that particular article for all user is added by performing insert query in articlerole collection.<br/>
 **Payload**:
 ```
 {
@@ -209,9 +210,10 @@ PUT: localhost:8080/articlerole/{articleid} <br/>
 **Params:**
 <br/>Key : articleid, Value: int <br/>
 **Description:**
-<br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".
-<br/>2. After accesing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to delete that article.
+<br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".<br/>
+<br/>2. After accesing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to delete that article.<br/>
 <br/>3. After deleting the article all entries related to that articleid in articlerole collection will be deleted<br/>
+
 **Response:**
 ```
 {
@@ -222,8 +224,9 @@ PUT: localhost:8080/articlerole/{articleid} <br/>
 **API:** localhost:8080/article<br/>
 **Method:** PUT<br/>
 **Description:**
-<br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".
-<br/>2. After accesing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to update that article.<br/>
+<br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".<br/>
+<br/>2. After accessing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to update that article.<br/>
+
 **Payload**:
 ```
 {
@@ -236,5 +239,46 @@ PUT: localhost:8080/articlerole/{articleid} <br/>
 ```
 {
     "message": "Article with id: 3 is successfully updated!"
-}~~~~
+}
+```
+#### Change company role of user.
+**API:** localhost:8080/role<br/>
+**Method:** PUT<br/>
+**Description:**
+<br/>1. Only superadmin have access to this api, and it's checked by "Cashbin".<br/>
+<br/>2. After changing role of user, corresponding role is updated for each article in articlerole collection.<br/>
+**Payload**:
+```
+{
+    "userid": 3,
+    "companyid": 1,
+    "role": "anonymous"
+}
+```
+**Response:**
+```
+{
+    "message": "Role for userid:3  is changed to: anonymous"
+}
+```
+#### Change role of user on particular article.
+**API:** localhost:8080/articlerole/{articleid}<br/>
+**Method:** PUT<br/>
+**Description:**
+<br/> Only superadmin have access to this api, and it's checked by "Cashbin" and can change role of user on particular article that will upated in articlerole collction. <br/>
+
+**Payload**:
+```
+{
+    "articleid": 1,
+    "userid" : 4,
+    "companyid": 1,
+    "role" : "admin"
+}
+```
+**Response:**
+```
+{
+    "message": "Role for userid:3 for articleid: 1 is changed to: admin"
+}
 ```
