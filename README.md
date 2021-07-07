@@ -21,7 +21,7 @@
 ## Initial Setup
 
 ### Mongo
-#### Database 
+#### Database
 Name :- SPEC-CENTER <br/>
 #### Collections
 1. user :- Struct corresponding to database entity is as below.
@@ -74,19 +74,42 @@ Name :- SPEC-CENTER <br/>
 <br/>2. Also, there role in role collection need to be added.
 ## APIs List
 
-#### LOGIN & USER ADD
-POST: localhost:8080/login/{companyid} <br/>
-POST: localhost:8080/adduser <br/>
-
+#### Login in Company
+```
+   POST: localhost:8080/login/{companyid} 
+```
+#### To add User
+```
+   POST: localhost:8080/adduser
+```
 #### ARTICLE RELATED APIs
-GET: localhost:8080/all_articles<br/>
-GET: localhost:8080/article<br/>
-PUT: localhost:8080/article<br/>
-DELELTE: localhost:8080/article<br/>
-
-#### ROLE CHANGE :- Only superadmin can change role of other user.<br/>
+##### To get all article in company.
+```
+   GET: localhost:8080/all_articles
+```
+##### To create article for company.
+```
+   POST: localhost:8080/article
+```
+##### To update article in company.
+```
+   PUT: localhost:8080/article
+```
+##### To delete article in company.
+```
+   DELELTE: localhost:8080/article
+```
+### ROLE CHANGE APIs
+#### Only superadmin can change role of other user.<br/>
+#### To change role of user in company
+```
+   PUT: localhost:8080/role <br/>
+```
+#### Only superadmin can change role of other user on particular article.<br/>
+```
 PUT: localhost:8080/articlerole/{articleid} <br/>
-PUT: localhost:8080/role <br/>
+```
+
 
 ## APIs
 
@@ -159,6 +182,26 @@ PUT: localhost:8080/role <br/>
     .
 ]
 ```
+#### Create article for company
+**API:** localhost:8080/article<br/>
+**Method:** POST<br/>
+**Description:**
+<br/>1. Superadmin have access to this api, and it's checked by "Cashbin".
+<br/>2. After adding article in article collection, role for that particular article for all user is add by performing insert query on articlerole collection.<br/>
+**Payload**:
+```
+{
+    "articleid":3,
+    "companyid":1,
+    "body": "Blockchain Learning"
+}
+```
+**Response:**
+```
+{
+    "InsertedID": "60e55c22b705d4c5af021b74"
+}
+```
 
 #### Delete article by articleid
 **API:** localhost:8080/article<br/>
@@ -193,5 +236,5 @@ PUT: localhost:8080/role <br/>
 ```
 {
     "message": "Article with id: 3 is successfully updated!"
-}
+}~~~~
 ```

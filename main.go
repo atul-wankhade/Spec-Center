@@ -15,10 +15,5 @@ var SECRET_KEY = []byte("gosecretkey")
 func main() {
 	authorization.SECRET_KEY = SECRET_KEY
 	log.Print("Starting the application...")
-
-	// client := utils.InitializeDatabase()
-	// defer client.Disconnect(context.Background())
-
 	controller.Start()
-
 }

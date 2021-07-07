@@ -37,7 +37,7 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 	userRole := fmt.Sprintf("%v", keyVal["role"])
 	userId, ok := keyVal["id"].(float64)
 	if !ok {
-		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("wrong userid"))
+		authorization.WriteError(http.StatusBadRequest, "Decode Error, Wrong userid provided, please check its type.", response, errors.New("wrong userid"))
 		return
 	}
 
@@ -47,12 +47,10 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 	user.Password = fmt.Sprintf("%v", keyVal["password"])
 	user.Email = fmt.Sprintf("%v", keyVal["email"])
 
-	// for logs
-	fmt.Println("!@!@!@!@", keyVal, user)
-
 	//setting default value for  role
-	if userRole != "admin" && userRole != "member" && userRole != "anonymous" {
-		userRole = "anonymous"
+	if userRole == "superadmin" && userRole != "admin" && userRole != "member" && userRole != "anonymous" {
+		authorization.WriteError(http.StatusBadRequest, "Invalid user role provided", response, errors.New("wrong role"))
+		return
 	}
 
 	user.Password = getHash([]byte(user.Password))

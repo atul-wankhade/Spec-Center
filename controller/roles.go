@@ -19,13 +19,19 @@ import (
 )
 
 func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
+	w.Header().Set("Content-Type", "application/json")
 	var role model.Roles
 	err := json.NewDecoder(r.Body).Decode(&role)
 	if err != nil {
 		authorization.WriteError(http.StatusBadRequest, "DECODE ERROR", w, err)
 		return
 	}
-	companyId := int(claims["companyid"].(float64))
+	floatcompanyID, ok := claims["companyid"].(float64)
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get companyid from claims"))
+		return
+	}
+	companyId := int(floatcompanyID)
 
 	if role.CompanyId != companyId {
 		authorization.WriteError(http.StatusBadRequest, "Please provide correct company id ", w, errors.New("wrong companyid"))
@@ -50,12 +56,16 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 	defer client.Disconnect(context.Background())
 	collection := client.Database("SPEC-CENTER").Collection("role")
 	filter := primitive.M{"userid": role.UserId, "companyid": role.CompanyId}
-	opts := options.Update().SetUpsert(true)
+	opts := options.Update().SetUpsert(false)
 	update := bson.D{{"$set", bson.D{{"role", role.Role}}}}
 
-	_, err = collection.UpdateOne(ctx, filter, update, opts)
+	result, err := collection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		authorization.WriteError(http.StatusInternalServerError, "update error", w, errors.New("update error"))
+		authorization.WriteError(http.StatusInternalServerError, "update error", w, err)
+		return
+	}
+	if result.ModifiedCount == 0{
+		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST, User not present", w, errors.New("BAD REQUEST, User not present"))
 		return
 	}
 
@@ -136,7 +146,7 @@ func updateUserArticleRoles(userID, companyID int, updatedRole string) {
 	defer client.Disconnect(context.Background())
 	collection := client.Database("SPEC-CENTER").Collection("articlerole")
 	filter := primitive.M{"userid": userID, "companyid": companyID}
-	opts := options.Update().SetUpsert(true)
+	opts := options.Update().SetUpsert(false)
 	update := bson.D{{"$set", bson.D{{"role", updatedRole}}}}
 
 	_, err := collection.UpdateMany(ctx, filter, update, opts)
