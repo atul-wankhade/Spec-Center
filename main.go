@@ -3,6 +3,7 @@ package main
 import (
 	"Spec-Center/authorization"
 	"Spec-Center/controller"
+	"Spec-Center/db"
 
 	// "casbin/casbin-http-role-example/authorization"
 
@@ -16,4 +17,5 @@ func main() {
 	authorization.SECRET_KEY = SECRET_KEY
 	log.Print("Starting the application...")
 	controller.Start()
+	db.Indexing()
 }

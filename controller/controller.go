@@ -10,7 +10,6 @@ import (
 )
 
 func Start() {
-
 	// setup casbin auth rules
 	authEnforcer, err := casbin.NewEnforcerSafe("./auth_model.conf", "./policy.csv")
 	if err != nil {
@@ -34,7 +33,6 @@ func Start() {
 	router.Handle("/role", authorization.IsAuthorized(authEnforcer, UpdateCompanyRoleHandler)).Methods("PUT")
 
 	// router.Use(authorization.Authorizer(authEnforcer))
-	log.Print("Server started on localhost:8040")
-	log.Fatal(http.ListenAndServe(":8040", router))
-
+	log.Print("Server started on localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", router))
 }

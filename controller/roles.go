@@ -151,6 +151,6 @@ func updateUserArticleRoles(userID, companyID int, updatedRole string) {
 
 	_, err := collection.UpdateMany(ctx, filter, update, opts)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error while updating user article roles",err)
 	}
 }

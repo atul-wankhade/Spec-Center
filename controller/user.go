@@ -61,8 +61,8 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 	defer cancel()
 	_, err = collection.InsertOne(ctx, user)
 	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
+		response.WriteHeader(http.StatusConflict)
+		response.Write([]byte(`{"message":"` + fmt.Sprintf("User with userid: %d is already present in database, please provide different userid", user.ID ) + `"}`))
 		return
 	}
 	// user role insertion in roles collection
@@ -96,7 +96,7 @@ func insertAllArticleRoleForNewUser(userID int, companyID int, role string) {
 
 	cursor, err := companyRoleCollection.Find(ctx, filter)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	defer cursor.Close(ctx)
 
@@ -107,7 +107,7 @@ func insertAllArticleRoleForNewUser(userID int, companyID int, role string) {
 	for cursor.Next(ctx) {
 		err := cursor.Decode(&article)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 		articleRole.ArticleId = article.ArticleID
 		articleRole.CompanyId = companyID
@@ -116,7 +116,7 @@ func insertAllArticleRoleForNewUser(userID int, companyID int, role string) {
 
 		_, err = articleRoleCollection.InsertOne(ctx, articleRole)
 		if err != nil {
-			log.Fatalf("Failed to add article role for article id : %d, user id : %d, error : %w", article.ArticleID, userID, err)
+			log.Printf("Failed to add article role for article id : %d, user id : %d, error : %w", article.ArticleID, userID, err)
 		}
 		log.Printf("ArticleRole for  article id : %d, for user id : %d , for company id : %d added successfully", article.ArticleID, userID, companyID)
 	}
