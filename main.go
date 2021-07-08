@@ -14,5 +14,6 @@ func main() {
 	authorization.SECRET_KEY = SECRET_KEY
 	log.Print("Starting the application...")
 	db.Indexing()
+	db.SuperadminEntry()
 	controller.Start()
 }

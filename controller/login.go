@@ -3,8 +3,6 @@ package controller
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"github.com/atul-wankhade/Spec-Center/authorization"
 	"github.com/atul-wankhade/Spec-Center/db"
 	"github.com/atul-wankhade/Spec-Center/model"
 	"log"
@@ -44,7 +42,7 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	err := collection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&dbUser)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + "Please provide correct Details. " + err.Error() + `"}`))
+		response.Write([]byte(`{"message":"` + "Please provide correct email. " + err.Error() + `"}`))
 		return
 	}
 
@@ -52,7 +50,7 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	err = collection.FindOne(ctx, primitive.M{"userid": dbUser.ID, "companyid": companyID}).Decode(&role)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + "Please provide Details. " + err.Error() + `"}`))
+		response.Write([]byte(`{"message":"` + "Please provide correct companyid and other details. " + err.Error() + `"}`))
 		return
 	}
 	userRole := role.Role
@@ -61,10 +59,10 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	dbPass := []byte(dbUser.Password)
 
 	// checking companyid is correct or not
-	if companyID != role.CompanyId {
-		authorization.WriteError(http.StatusBadRequest, "wrong company id", response, errors.New("wrong company"))
-		return
-	}
+	//if companyID != role.CompanyId {
+	//	authorization.WriteError(http.StatusBadRequest, "wrong company id", response, errors.New("wrong company"))
+	//	return
+	//}
 
 	passErr := bcrypt.CompareHashAndPassword(dbPass, userPass)
 	if passErr != nil {
@@ -97,10 +95,4 @@ func GenerateJWT(userID int, companyID int, userRole string) (string, error) {
 	return tokenString, nil
 }
 
-func getHash(pwd []byte) string {
-	hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.MinCost)
-	if err != nil {
-		log.Println(err)
-	}
-	return string(hash)
-}
+

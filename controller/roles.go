@@ -84,11 +84,10 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		authorization.WriteError(http.StatusBadRequest, "DECODE ERROR", w, err)
 		return
 	}
-
 	companyId := int(claims["companyid"].(float64))
 
 	if articleRole.CompanyId != companyId {
-		authorization.WriteError(http.StatusBadRequest, "Please provide correct company id ", w, err)
+		authorization.WriteError(http.StatusBadRequest, "Please provide correct company id ", w,errors.New("BAD REQUEST"))
 		return
 	}
 
@@ -97,7 +96,6 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		return
 	}
 	superadminId := int(claims["userid"].(float64))
-
 	if superadminId == articleRole.UserId {
 		authorization.WriteError(http.StatusBadRequest, "Cannot change role on article for superadmin", w, errors.New("cannot update own role"))
 		return
@@ -107,10 +105,10 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 
 	client := db.InitializeDatabase()
 	defer client.Disconnect(context.Background())
-	collection := client.Database("SPEC-CENTER").Collection("role")
+	roleCollection := client.Database("SPEC-CENTER").Collection("role")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = collection.FindOne(ctx, primitive.M{"userid": articleRole.UserId, "companyid": articleRole.CompanyId}).Decode(&role)
+	err = roleCollection.FindOne(ctx, primitive.M{"userid": articleRole.UserId, "companyid": articleRole.CompanyId}).Decode(&role)
 	if err != nil {
 		authorization.WriteError(http.StatusBadRequest, "Please provide correct userid!, user not present", w, err)
 		return
@@ -120,14 +118,14 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		return
 	}
 
-	collection1 := client.Database("SPEC-CENTER").Collection("articlerole")
+	articleCollection := client.Database("SPEC-CENTER").Collection("articlerole")
 	opts := options.Update().SetUpsert(false)
 	filter := primitive.M{"userid": articleRole.UserId, "companyid": articleRole.CompanyId, "articleid": articleRole.ArticleId}
 	update := bson.D{{"$set", bson.D{{"role", articleRole.Role}}}}
 
-	result, err := collection1.UpdateOne(ctx, filter, update, opts)
+	result, err := articleCollection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		authorization.WriteError(http.StatusInternalServerError, "update error", w, errors.New("update error"))
+		authorization.WriteError(http.StatusInternalServerError, "update error", w, err)
 		return
 	}
 	if result.ModifiedCount == 0{

@@ -262,7 +262,7 @@
 }
 ```
 #### Change role of user on particular article.
-**API:** localhost:8080/articlerole/{articleid}<br/>
+**API:** localhost:8080/articlerole<br/>
 **Method:** PUT<br/>
 **Description:**
 <br/> Only superadmin have access to this api, and it's checked by "Cashbin" and can change role of user on particular article that will upated in articlerole collction. <br/>

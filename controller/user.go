@@ -8,6 +8,7 @@ import (
 	"github.com/atul-wankhade/Spec-Center/authorization"
 	"github.com/atul-wankhade/Spec-Center/db"
 	"github.com/atul-wankhade/Spec-Center/model"
+	"github.com/atul-wankhade/Spec-Center/utils"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -48,21 +49,21 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 	user.Email = fmt.Sprintf("%v", keyVal["email"])
 
 	//setting default value for  role
-	if userRole == "superadmin" && userRole != "admin" && userRole != "member" && userRole != "anonymous" {
+	if userRole == "superadmin"  ||  userRole != "admin" && userRole != "member" && userRole != "anonymous" {
 		authorization.WriteError(http.StatusBadRequest, "Invalid user role provided", response, errors.New("wrong role"))
 		return
 	}
 
-	user.Password = getHash([]byte(user.Password))
+	user.Password = utils.GetHash([]byte(user.Password))
 	client := db.InitializeDatabase()
 	defer client.Disconnect(context.Background())
-	collection := client.Database("SPEC-CENTER").Collection("user")
+	collection:= client.Database("SPEC-CENTER").Collection("user")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_, err = collection.InsertOne(ctx, user)
 	if err != nil {
 		response.WriteHeader(http.StatusConflict)
-		response.Write([]byte(`{"message":"` + fmt.Sprintf("User with userid: %d is already present in database, please provide different userid", user.ID ) + `"}`))
+		response.Write([]byte(`{"message":"` + fmt.Sprintf("User with userid: %d OR email : %s is already present in database, please provide different userid or email.", user.ID, user.Email ) + `"}`))
 		return
 	}
 	// user role insertion in roles collection

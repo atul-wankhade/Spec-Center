@@ -66,7 +66,6 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 		authorization.WriteError(http.StatusInternalServerError, "String conversion error", response, errors.New("unable to convert articleid into int value"))
 		return
 	}
-	fmt.Println("!!!!!!!!!!!!!!!!!!!!!", articleID)
 
 	companyID, ok := claims["companyid"].(float64)
 	if !ok {
@@ -90,9 +89,6 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST, please check request body and its value.", response, err)
 		return
 	}
-
-	//for logs
-	fmt.Println("!!!!!!!!!!!", articleRole)
 
 	// checking role on article, if its other than admin, superadmin then user is unauthorized to delete article
 
@@ -123,12 +119,6 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 }
 
 func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
-	defer func() {
-		err := recover()
-		if err != nil{
-			fmt.Println("PANIC ERROR")
-		}
-	}()
 	response.Header().Set("Content-Type", "application/json")
 	var article model.Article
 
@@ -158,7 +148,7 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 	//first finding out role on particular article from articlerole collection, using getUserArticleRole function
 	articleRole, err := getUserArticleRole(int(userID), int(companyID), articleID)
 	if err != nil {
-		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST, please check request body and its value.", response, err)
+		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST, please check articleid and request body.", response, err)
 		return
 	}
 
