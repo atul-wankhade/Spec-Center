@@ -1,12 +1,9 @@
 package main
 
 import (
-	"Spec-Center/authorization"
-	"Spec-Center/controller"
-	"Spec-Center/db"
-
-	// "casbin/casbin-http-role-example/authorization"
-
+	"github.com/atul-wankhade/Spec-Center/authorization"
+	"github.com/atul-wankhade/Spec-Center/controller"
+	"github.com/atul-wankhade/Spec-Center/db"
 	"log"
 	// "github.com/dgrijalva/jwt-go"
 )
@@ -16,6 +13,6 @@ var SECRET_KEY = []byte("gosecretkey")
 func main() {
 	authorization.SECRET_KEY = SECRET_KEY
 	log.Print("Starting the application...")
-	controller.Start()
 	db.Indexing()
+	controller.Start()
 }

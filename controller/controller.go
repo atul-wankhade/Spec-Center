@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"Spec-Center/authorization"
+	"github.com/atul-wankhade/Spec-Center/authorization"
 	"log"
 	"net/http"
 

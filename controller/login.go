@@ -1,12 +1,12 @@
 package controller
 
 import (
-	"Spec-Center/authorization"
-	"Spec-Center/db"
-	"Spec-Center/model"
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/atul-wankhade/Spec-Center/authorization"
+	"github.com/atul-wankhade/Spec-Center/db"
+	"github.com/atul-wankhade/Spec-Center/model"
 	"log"
 	"net/http"
 	"strconv"

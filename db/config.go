@@ -14,25 +14,28 @@ import (
 func Indexing(){
 	client := InitializeDatabase()
 	userCollection := client.Database("SPEC-CENTER").Collection("user")
-	_, err := userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+	indexname1, err := userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys: bson.M{
 			"id": 1,
 		},
 		Options: options.Index().SetUnique(true),
-	},)
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("!!!!!!!!!!!!!!!",indexname1)
+
 	articleCollection := client.Database("SPEC-CENTER").Collection("article")
-	_, err = articleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+	indexname, err := articleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys: bson.M{
 			"articleid": 1,
 		},
 		Options: options.Index().SetUnique(true),
-	},)
+	})
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("!!!!!!!!!!!!!!!",indexname)
 }
 
 func InitializeDatabase() *mongo.Client {

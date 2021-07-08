@@ -1,13 +1,13 @@
 package controller
 
 import (
-	"Spec-Center/authorization"
-	"Spec-Center/db"
-	"Spec-Center/model"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/atul-wankhade/Spec-Center/authorization"
+	"github.com/atul-wankhade/Spec-Center/db"
+	"github.com/atul-wankhade/Spec-Center/model"
 	"log"
 	"net/http"
 	"strconv"
