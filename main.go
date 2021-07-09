@@ -13,6 +13,7 @@ func main() {
 	log.Print("Starting the application...")
 	db.Indexing()
 	db.SuperadminEntry()
+	db.CompanyEntry()
 	go worker.Worker()
 
 	controller.Start()

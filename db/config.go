@@ -122,7 +122,7 @@ func SuperadminEntry() {
 	log.Println("Superadmin entries inserted")
 }
 
-func companyEntry() {
+func CompanyEntry() {
 	var gslab, ibm model.Company
 	gslab = model.Company{ID: 1, Name: "gslab"}
 	ibm = model.Company{ID: 2, Name: "ibm"}
