@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/atul-wankhade/Spec-Center/authorization"
-	"github.com/atul-wankhade/Spec-Center/db"
-	"github.com/atul-wankhade/Spec-Center/model"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/atul-wankhade/Spec-Center/authorization"
+	"github.com/atul-wankhade/Spec-Center/db"
+	"github.com/atul-wankhade/Spec-Center/model"
 
 	"github.com/dgrijalva/jwt-go"
 	"go.mongodb.org/mongo-driver/bson"
@@ -48,11 +48,15 @@ func CreateArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.Map
 	result, err := collection.InsertOne(ctx, article)
 	if err != nil {
 		w.WriteHeader(http.StatusConflict)
-		w.Write([]byte(`{"message":"` + fmt.Sprintf("Article with articleid: %d is already present in database, please provide different articleid", article.ArticleID ) + `"}`))
+		w.Write([]byte(`{"message":"` + fmt.Sprintf("Article with articleid: %d is already present in database, please provide different articleid", article.ArticleID) + `"}`))
 		return
 	}
 
-	go insertRolesForNewArticle(article.ArticleID, article.ComapanyID)
+	entity := model.NewEntity{Name: "article", ID: article.ArticleID, CompanyID: article.ComapanyID}
+	_, err = client.Database("SPEC-CENTER").Collection("newentity").InsertOne(ctx, entity)
+	if err != nil {
+		authorization.WriteError(http.StatusInternalServerError, "insert operation failed", w, err)
+	}
 
 	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(result)
@@ -84,7 +88,7 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 
 	fmt.Println(userID, companyID, articleID)
 
-	articleRole, err  := getUserArticleRole(int(userID), int(companyID), articleID)
+	articleRole, err := getUserArticleRole(int(userID), int(companyID), articleID)
 	if err != nil {
 		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST, please check request body and its value.", response, err)
 		return
@@ -233,41 +237,41 @@ func getUserArticleRole(userID int, companyID int, articleID int) (string, error
 	return articleRole.Role, nil
 }
 
-// Inserting articlerole for newly created article for all user present in company with there role
-func insertRolesForNewArticle(articleID, companyID int) {
-	client := db.InitializeDatabase()
-	defer client.Disconnect(context.Background())
-	database := client.Database("SPEC-CENTER")
+// // Inserting articlerole for newly created article for all user present in company with there role
+// func insertRolesForNewArticle(articleID, companyID int) {
+// 	client := db.InitializeDatabase()
+// 	defer client.Disconnect(context.Background())
+// 	database := client.Database("SPEC-CENTER")
 
-	companyRoleCollection := database.Collection("role")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	filter := primitive.M{"companyid": companyID}
+// 	companyRoleCollection := database.Collection("role")
+// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+// 	defer cancel()
+// 	filter := primitive.M{"companyid": companyID}
 
-	cursor, err := companyRoleCollection.Find(ctx, filter)
-	if err != nil {
-		log.Println(err)
-	}
-	defer cursor.Close(ctx)
+// 	cursor, err := companyRoleCollection.Find(ctx, filter)
+// 	if err != nil {
+// 		log.Println(err)
+// 	}
+// 	defer cursor.Close(ctx)
 
-	articleRoleCollection := database.Collection("articlerole")
-	var articleRole model.ArticleRole
-	var userRole model.Roles
+// 	articleRoleCollection := database.Collection("articlerole")
+// 	var articleRole model.ArticleRole
+// 	var userRole model.Roles
 
-	for cursor.Next(ctx) {
-		err := cursor.Decode(&userRole)
-		if err != nil {
-			log.Println(err)
-		}
-		articleRole.ArticleId = articleID
-		articleRole.CompanyId = companyID
-		articleRole.Role = userRole.Role
-		articleRole.UserId = userRole.UserId
+// 	for cursor.Next(ctx) {
+// 		err := cursor.Decode(&userRole)
+// 		if err != nil {
+// 			log.Println(err)
+// 		}
+// 		articleRole.ArticleId = articleID
+// 		articleRole.CompanyId = companyID
+// 		articleRole.Role = userRole.Role
+// 		articleRole.UserId = userRole.UserId
 
-		_, err = articleRoleCollection.InsertOne(ctx, articleRole)
-		if err != nil {
-			log.Printf("Failed to add article role for article id : %d, user id : %d, error : %w", articleID, userRole.UserId, err)
-		}
-		log.Printf("Role on new article with article id : %d, for user id : %d , for company id : %d added successfully", articleID, userRole.UserId, companyID)
-	}
-}
+// 		_, err = articleRoleCollection.InsertOne(ctx, articleRole)
+// 		if err != nil {
+// 			log.Printf("Failed to add article role for article id : %d, user id : %d, error : %w", articleID, userRole.UserId, err)
+// 		}
+// 		log.Printf("Role on new article with article id : %d, for user id : %d , for company id : %d added successfully", articleID, userRole.UserId, companyID)
+// 	}
+// }

@@ -1,10 +1,11 @@
 package utils
 
 import (
-	"github.com/joho/godotenv"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func GetHash(pwd []byte) string {

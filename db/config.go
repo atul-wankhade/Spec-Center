@@ -3,18 +3,19 @@ package db
 import (
 	"context"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/atul-wankhade/Spec-Center/model"
 	"github.com/atul-wankhade/Spec-Center/utils"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
-	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // for preventing duplicate entry with same userid and articleid in user and article collection.
-func Indexing(){
+func Indexing() {
 	client := InitializeDatabase()
 	defer client.Disconnect(context.Background())
 	userCollection := client.Database("SPEC-CENTER").Collection("user")
@@ -58,15 +59,16 @@ func Indexing(){
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Indexing done..!")
 }
 
 // SuperadminEntry for entering  default superadmin and its role for each company in database.
 func SuperadminEntry() {
 	// retrieving password from env variables
-	passSuperadminGSLAB:= utils.GetEnvVariable("gslab_pass")
-	passSuperadminIBM:= utils.GetEnvVariable("ibm_pass")
+	passSuperadminGSLAB := utils.GetEnvVariable("gslab_pass")
+	passSuperadminIBM := utils.GetEnvVariable("ibm_pass")
 
-	fmt.Println("!!!!!!!!!!!",passSuperadminIBM,passSuperadminGSLAB)
+	fmt.Println("!!!!!!!!!!!", passSuperadminIBM, passSuperadminGSLAB)
 
 	client := InitializeDatabase()
 	defer client.Disconnect(context.Background())
@@ -76,21 +78,21 @@ func SuperadminEntry() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var superadminGSLAB,superadminIBM model.User
+	var superadminGSLAB, superadminIBM model.User
 
 	superadminGSLAB.ID = 1
-	superadminGSLAB.FirstName= "atul"
+	superadminGSLAB.FirstName = "atul"
 	superadminGSLAB.LastName = "wankhade"
-	superadminGSLAB.Email= "atul@gslab.com"
-	superadminGSLAB.Password =  utils.GetHash([]byte(passSuperadminGSLAB))
+	superadminGSLAB.Email = "atul@gslab.com"
+	superadminGSLAB.Password = utils.GetHash([]byte(passSuperadminGSLAB))
 
 	superadminIBM.ID = 2
-	superadminIBM.FirstName= "bhushan"
+	superadminIBM.FirstName = "bhushan"
 	superadminIBM.LastName = "gupta"
-	superadminIBM.Email= "bhushan@ibm.com"
-	superadminIBM.Password=  utils.GetHash([]byte(passSuperadminIBM))
+	superadminIBM.Email = "bhushan@ibm.com"
+	superadminIBM.Password = utils.GetHash([]byte(passSuperadminIBM))
 
-	_, err := userCollection.InsertMany(ctx, []interface{}{superadminGSLAB,superadminIBM})
+	_, err := userCollection.InsertMany(ctx, []interface{}{superadminGSLAB, superadminIBM})
 	if err != nil {
 		log.Println(err)
 	}
@@ -102,11 +104,12 @@ func SuperadminEntry() {
 	roleForIBM.CompanyId = 2
 	roleForIBM.UserId = 2
 	roleForIBM.Role = "superadmin"
-	_, err = roleCollection.InsertMany(ctx, []interface{}{roleForGSLAB,roleForIBM})
+	_, err = roleCollection.InsertMany(ctx, []interface{}{roleForGSLAB, roleForIBM})
 
 	if err != nil {
-		log.Println(err,"role not added for superadmin user in database")
+		log.Println(err, "role not added for superadmin user in database")
 	}
+	log.Println("Superadmin entries inserted")
 }
 
 func InitializeDatabase() *mongo.Client {

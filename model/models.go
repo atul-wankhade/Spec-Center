@@ -41,3 +41,9 @@ type Article struct {
 	ArticleID  int    `json:"articleid" bson:"articleid"`
 	Body       string `json:"body" bson:"body"`
 }
+
+type NewEntity struct{
+	Name string `json:"name" bson:"name"`
+	ID   int  `json:"id" bson:"id"`
+	CompanyID int `json:"companyid" bson:"companyid"`
+}

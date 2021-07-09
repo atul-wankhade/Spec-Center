@@ -1,9 +1,10 @@
 package controller
 
 import (
-	"github.com/atul-wankhade/Spec-Center/authorization"
 	"log"
 	"net/http"
+
+	"github.com/atul-wankhade/Spec-Center/authorization"
 
 	"github.com/casbin/casbin"
 	"github.com/gorilla/mux"
