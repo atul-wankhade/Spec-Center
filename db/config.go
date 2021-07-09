@@ -59,6 +59,16 @@ func Indexing() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	companyCollection := client.Database("SPEC-CENTER").Collection("company")
+	_, err = companyCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys: bson.M{
+			"id": 1,
+		},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Println("Indexing done..!")
 }
 
@@ -110,6 +120,19 @@ func SuperadminEntry() {
 		log.Println(err, "role not added for superadmin user in database")
 	}
 	log.Println("Superadmin entries inserted")
+}
+
+func companyEntry() {
+	var gslab, ibm model.Company
+	gslab = model.Company{ID: 1, Name: "gslab"}
+	ibm = model.Company{ID: 2, Name: "ibm"}
+	client := InitializeDatabase()
+	companyCollection := client.Database("SPEC-CENTER").Collection("company")
+	_, err := companyCollection.InsertMany(context.Background(), []interface{}{gslab, ibm})
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("company entrys added")
 }
 
 func InitializeDatabase() *mongo.Client {

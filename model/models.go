@@ -2,8 +2,7 @@ package model
 
 import "go.mongodb.org/mongo-driver/mongo"
 
-
-type Database struct{
+type Database struct {
 	Client *mongo.Client
 }
 
@@ -16,11 +15,8 @@ type User struct {
 }
 
 type Company struct {
-	ID         string   `json:"id" bson:"id"`
-	Name       string   `json:"name" bson:"name"`
-	Superadmin int      `json:"superadmin" bson:"superadmin"`
-	Admins     []string `json:"admins" bson:"admins"`
-	Members    []string `json:"members" bson:"members"`
+	ID   int    `json:"id" bson:"id"`
+	Name string `json:"name" bson:"name"`
 }
 
 type Roles struct {
@@ -42,8 +38,8 @@ type Article struct {
 	Body       string `json:"body" bson:"body"`
 }
 
-type NewEntity struct{
-	Name string `json:"name" bson:"name"`
-	ID   int  `json:"id" bson:"id"`
-	CompanyID int `json:"companyid" bson:"companyid"`
+type NewEntity struct {
+	Name      string `json:"name" bson:"name"`
+	ID        int    `json:"id" bson:"id"`
+	CompanyID int    `json:"companyid" bson:"companyid"`
 }
