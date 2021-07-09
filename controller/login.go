@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/atul-wankhade/Spec-Center/db"
 	"github.com/atul-wankhade/Spec-Center/model"
+	"github.com/atul-wankhade/Spec-Center/utils"
 	"log"
 	"net/http"
 	"strconv"
@@ -17,9 +18,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var SECRET_KEY = []byte("gosecretkey")
 
-// var Client *mongo.Client
+
+var SECRET = utils.GetEnvVariable("SECRET")
+var SECRET_KEY = []byte(SECRET)
 
 func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")

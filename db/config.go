@@ -7,7 +7,6 @@ import (
 	"github.com/atul-wankhade/Spec-Center/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"log"
-	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -63,8 +62,9 @@ func Indexing(){
 
 // SuperadminEntry for entering  default superadmin and its role for each company in database.
 func SuperadminEntry() {
-	passSuperadminGSLAB := os.Getenv("gslab_pass")
-	passSuperadminIBM :=  os.Getenv("ibm_pass")
+	// retrieving password from env variables
+	passSuperadminGSLAB:= utils.GetEnvVariable("gslab_pass")
+	passSuperadminIBM:= utils.GetEnvVariable("ibm_pass")
 
 	fmt.Println("!!!!!!!!!!!",passSuperadminIBM,passSuperadminGSLAB)
 

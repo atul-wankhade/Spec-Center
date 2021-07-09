@@ -19,8 +19,19 @@
 10. Use Casbin for Authorisation Roles.
 11. Write rest API to perform all operations. No need for html pages.
 ## Initial Setup
+### Environment Variable Setup :-
+#### Create .env file for all environment variable
+#### 1. As we have two company right now so create password for superadmin in that file as follows :-
+      ```
+      ibm_pass=<password for ibm>
+      gslab_pass=password for gslab>
+      ```
+#### 2. Also need to setup one more env variable in .env for jwt token secret as follows
+      ```
+      SECRET=<secret value>
+      ```
 
-### Mongo
+### Mongo Setup
 #### Database
 #### Name :- SPEC-CENTER <br/>
 #### Collections

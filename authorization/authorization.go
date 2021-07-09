@@ -8,16 +8,17 @@ import (
 
 	"errors"
 	"fmt"
+	"github.com/atul-wankhade/Spec-Center/utils"
 	"log"
 	"net/http"
 	//"strings"
 
 	"github.com/casbin/casbin"
 	"github.com/dgrijalva/jwt-go"
-	"go.mongodb.org/mongo-driver/mongo"
 )
-var SECRET_KEY = []byte("gosecretkey")
-var Client *mongo.Client
+
+var SECRET = utils.GetEnvVariable("SECRET")
+var SECRET_KEY = []byte(SECRET)
 
 func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.Request, jwt.MapClaims)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
