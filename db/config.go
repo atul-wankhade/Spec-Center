@@ -115,7 +115,12 @@ func SuperadminEntry() {
 func InitializeDatabase() *mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
+
+	// for running on docker, mongoservice is docker container name mentioned in docker-compose.
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://mongoservice:27017"))
+
+	// for running locally
+	//client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		log.Fatal(err)
 	} else {

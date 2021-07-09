@@ -1,11 +1,11 @@
 package utils
 
 import (
-	"log"
-	"os"
-
+	// godot package to load/read the .env file and
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
+	"log"
+	"os"
 )
 
 func GetHash(pwd []byte) string {
@@ -16,8 +16,7 @@ func GetHash(pwd []byte) string {
 	return string(hash)
 }
 
-// godot package to load/read the .env file and
-// return the value of the key
+// return the value of the key enviroment variable
 func GetEnvVariable(key string) string {
 	// load .env file
 	err := godotenv.Load(".env")

@@ -1,0 +1,18 @@
+version: "3"
+services:
+  mongoservice:
+    image: mongo
+    volumes:
+      - mongo-volume:/data/mongo-backup
+    ports:
+      - "27018:27017"
+  spec-center:
+    build: .
+    depends_on:
+      - mongoservice
+  #  environment:
+    #  - HOST=
+    ports:
+      - "8080:8080"
+volumes:
+  mongo-volume:
