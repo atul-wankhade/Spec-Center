@@ -6,11 +6,15 @@ import (
 	//"go.mongodb.org/mongo-driver/bson/primitive"
 	//"time"
 
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/atul-wankhade/Spec-Center/utils"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/atul-wankhade/Spec-Center/utils"
+
 	//"strings"
 
 	"github.com/casbin/casbin"
@@ -43,6 +47,21 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		} else {
 			fmt.Fprintf(w, "Not Authorized")
 		}
+
+		var tm time.Time
+		switch iat := claims["exp"].(type) {
+		case float64:
+			tm = time.Unix(int64(iat), 0)
+		case json.Number:
+			v, _ := iat.Int64()
+			tm = time.Unix(v, 0)
+		}
+	
+		fmt.Println(tm)
+
+		// if time.Unix(expiry,0).Before(time.Now()) {
+		// 	return
+		// }
 		role := claims["userrole"]
 		//companyID, ok := claims["companyid"].(float64)
 		//if !ok {

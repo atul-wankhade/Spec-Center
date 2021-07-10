@@ -8,113 +8,114 @@ import (
 
 	"github.com/atul-wankhade/Spec-Center/model"
 	"github.com/atul-wankhade/Spec-Center/utils"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// for preventing duplicate entry with same userid and articleid in user and article collection.
-func Indexing() {
-	client := InitializeDatabase()
-	defer client.Disconnect(context.Background())
-	userCollection := client.Database("SPEC-CENTER").Collection("user")
-	_, err := userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.M{
-			"id": 1,
-		},
-		Options: options.Index().SetUnique(true),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
+// // for preventing duplicate entry with same userid and articleid in user and article collection.
+// func Indexing() {
+// 	client := InitializeDatabase()
+// 	defer client.Disconnect(context.Background())
+// 	userCollection := client.Database(utils.Database).Collection("user")
+// 	_, err := userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+// 		Keys: bson.M{
+// 			"id": 1,
+// 		},
+// 		Options: options.Index().SetUnique(true),
+// 	})
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	_, err = userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.M{
-			"email": 1,
-		},
-		Options: options.Index().SetUnique(true),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
+// 	_, err = userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+// 		Keys: bson.M{
+// 			"email": 1,
+// 		},
+// 		Options: options.Index().SetUnique(true),
+// 	})
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
 
-	articleCollection := client.Database("SPEC-CENTER").Collection("article")
-	_, err = articleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.M{
-			"articleid": 1,
-		},
-		Options: options.Index().SetUnique(true),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	roleCollection := client.Database("SPEC-CENTER").Collection("role")
-	_, err = roleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.M{
-			"userid": 1,
-		},
-		Options: options.Index().SetUnique(true),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	companyCollection := client.Database("SPEC-CENTER").Collection("company")
-	_, err = companyCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.M{
-			"id": 1,
-		},
-		Options: options.Index().SetUnique(true),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Indexing done..!")
-}
+// 	articleCollection := client.Database(utils.Database).Collection("article")
+// 	_, err = articleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+// 		Keys: bson.M{
+// 			"articleid": 1,
+// 		},
+// 		Options: options.Index().SetUnique(true),
+// 	})
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	roleCollection := client.Database(utils.Database).Collection("role")
+// 	_, err = roleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+// 		Keys: bson.M{
+// 			"userid": 1,
+// 		},
+// 		Options: options.Index().SetUnique(true),
+// 	})
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	companyCollection := client.Database(utils.Database).Collection("company")
+// 	_, err = companyCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+// 		Keys: bson.M{
+// 			"id": 1,
+// 		},
+// 		Options: options.Index().SetUnique(true),
+// 	})
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	log.Println("Indexing done..!")
+// }
+
+var gslabID, kpointID primitive.ObjectID
 
 // SuperadminEntry for entering  default superadmin and its role for each company in database.
 func SuperadminEntry() {
 	// retrieving password from env variables
 	passSuperadminGSLAB := utils.GetEnvVariable("gslab_pass")
-	passSuperadminIBM := utils.GetEnvVariable("ibm_pass")
+	passSuperadminKpoint := utils.GetEnvVariable("kpoint_pass")
 
-	fmt.Println("!!!!!!!!!!!", passSuperadminIBM, passSuperadminGSLAB)
+	fmt.Println("!!!!!!!!!!!", passSuperadminKpoint, passSuperadminGSLAB)
 
 	client := InitializeDatabase()
 	defer client.Disconnect(context.Background())
-	userCollection := client.Database("SPEC-CENTER").Collection("user")
-	roleCollection := client.Database("SPEC-CENTER").Collection("role")
+	userCollection := client.Database(utils.Database).Collection(utils.UserCollection)
+	roleCollection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var superadminGSLAB, superadminIBM model.User
-
-	superadminGSLAB.ID = 1
+	var superadminGSLAB, superadminKpoint model.User
+	gslabID = primitive.NewObjectID()
+	kpointID = primitive.NewObjectID()
 	superadminGSLAB.FirstName = "atul"
 	superadminGSLAB.LastName = "wankhade"
-	superadminGSLAB.Email = "atul@gslab.com"
+	superadminGSLAB.Email = "atul@gmail.com"
 	superadminGSLAB.Password = utils.GetHash([]byte(passSuperadminGSLAB))
 
-	superadminIBM.ID = 2
-	superadminIBM.FirstName = "bhushan"
-	superadminIBM.LastName = "gupta"
-	superadminIBM.Email = "bhushan@ibm.com"
-	superadminIBM.Password = utils.GetHash([]byte(passSuperadminIBM))
+	superadminKpoint.FirstName = "bhushan"
+	superadminKpoint.LastName = "gupta"
+	superadminKpoint.Email = "bhushan@gmail.com"
+	superadminKpoint.Password = utils.GetHash([]byte(passSuperadminKpoint))
 
-	_, err := userCollection.InsertMany(ctx, []interface{}{superadminGSLAB, superadminIBM})
+	_, err := userCollection.InsertMany(ctx, []interface{}{superadminGSLAB, superadminKpoint})
 	if err != nil {
 		log.Println(err)
 	}
-	var roleForGSLAB, roleForIBM model.Roles
-	roleForGSLAB.CompanyId = 1
-	roleForGSLAB.UserId = 1
-	roleForGSLAB.Role = "superadmin"
+	var roleForGSLAB, roleForKpoint model.Roles
+	roleForKpoint.UserEmail = "bhushan@gmail.com"
+	roleForKpoint.CompanyId = kpointID.String()
+	roleForKpoint.Role = "superadmin"
 
-	roleForIBM.CompanyId = 2
-	roleForIBM.UserId = 2
-	roleForIBM.Role = "superadmin"
-	_, err = roleCollection.InsertMany(ctx, []interface{}{roleForGSLAB, roleForIBM})
+	roleForGSLAB.CompanyId = gslabID.String()
+	roleForGSLAB.Role = "superadmin"
+	roleForGSLAB.UserEmail = "atul@gmail.com"
+	_, err = roleCollection.InsertMany(ctx, []interface{}{roleForGSLAB, roleForKpoint})
 
 	if err != nil {
 		log.Println(err, "role not added for superadmin user in database")
@@ -123,12 +124,12 @@ func SuperadminEntry() {
 }
 
 func CompanyEntry() {
-	var gslab, ibm model.Company
-	gslab = model.Company{ID: 1, Name: "gslab"}
-	ibm = model.Company{ID: 2, Name: "ibm"}
+	var gslab, kpoint model.Company
+	gslab = model.Company{ID: gslabID, Name: "gslab"}
+	kpoint = model.Company{ID: kpointID, Name: "kpoint"}
 	client := InitializeDatabase()
-	companyCollection := client.Database("SPEC-CENTER").Collection("company")
-	_, err := companyCollection.InsertMany(context.Background(), []interface{}{gslab, ibm})
+	companyCollection := client.Database(utils.Database).Collection(utils.CompanyCollection)
+	_, err := companyCollection.InsertMany(context.Background(), []interface{}{gslab, kpoint})
 	if err != nil {
 		log.Println(err)
 	}
@@ -139,11 +140,8 @@ func InitializeDatabase() *mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// for running on docker, mongoservice is docker container name mentioned in docker-compose.
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://mongoservice:27017"))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(utils.MongoUrl))
 
-	// for running locally
-	//client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		log.Fatal(err)
 	} else {

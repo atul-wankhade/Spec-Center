@@ -2,10 +2,27 @@ package utils
 
 import (
 	// godot package to load/read the .env file and
-	"github.com/joho/godotenv"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
+	"golang.org/x/crypto/bcrypt"
+)
+
+const(
+	//Collection names
+	// MongoUrl = "mongodb://mongoservice:27017"
+	MongoUrl = "mongodb://localhost:27017"
+	Database = "SPEC-CENTER"
+	CompanyRolesCollection = "company_roles"
+	UserCollection = "user"
+	ArticleCollection = "article"
+	ArticleRoleCollection = "article_role"
+	RolesCollection = "role"
+	NewEntityCollection = "new_entity"
+	CompanyCollection = "company"
+
+	//
 )
 
 func GetHash(pwd []byte) string {
