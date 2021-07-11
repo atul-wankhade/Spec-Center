@@ -53,22 +53,34 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 	user.Password = fmt.Sprintf("%v", keyVal["password"])
 	user.Email = fmt.Sprintf("%v", keyVal["email"])
 
-	//setting default value for  role
-	if userRole2 == "superadmin" || (userRole2 != "admin" && userRole2 != "member" && userRole2 != "anonymous") {
+	//checking user role
+	//|| (userRole2 != "admin" && userRole2 != "member" && userRole2 != "anonymous")
+	if userRole2 == "superadmin" {
+		authorization.WriteError(http.StatusBadRequest, "Invalid user role provided", response, errors.New("wrong role"))
+		return
+	}
+
+	client := db.InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	rolecollection := client.Database(utils.Database).Collection(utils.RolesCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	result := rolecollection.FindOne(ctx, primitive.M{"name": userRole2})
+	fmt.Println("@@@@@@@@@@", result)
+	if result.Err() != nil {
+		fmt.Println("@@@@@@@@@@", result.Err())
 		authorization.WriteError(http.StatusBadRequest, "Invalid user role provided", response, errors.New("wrong role"))
 		return
 	}
 
 	user.Password = utils.GetHash([]byte(user.Password))
-	client := db.InitializeDatabase()
-	defer client.Disconnect(context.Background())
+
 	collection := client.Database(utils.Database).Collection(utils.UserCollection)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 	_, err = collection.InsertOne(ctx, user)
 	if err != nil {
 		response.WriteHeader(http.StatusConflict)
-		response.Write([]byte(`{"message":"` + fmt.Sprintf("User with userid: %d OR email : %s is already present in database, please provide different userid or email.", user.ID, user.Email) + `"}`))
+		response.Write([]byte(`{"message":"` + fmt.Sprintf("User with  email : %s is already present in database!", user.Email) + `"}`))
 		return
 	}
 	// user role insertion in roles collection

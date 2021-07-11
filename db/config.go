@@ -77,6 +77,19 @@ func AddRoles() {
 	log.Println("roles entrys added")
 
 }
+func CheckRole(userRole string) bool {
+	if userRole == "superadmin" {
+		return false
+	}
+	client := InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	rolecollection := client.Database(utils.Database).Collection(utils.RolesCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	result := rolecollection.FindOne(ctx, primitive.M{"name": userRole})
+	return result.Err() == nil
+}
 
 var gslabID, kpointID, gslabUserID, kpointUserID primitive.ObjectID
 

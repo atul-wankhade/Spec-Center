@@ -200,108 +200,97 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully updated!", articleID) + `"}`))
 }
 
-// func GetArticlesHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
-// 	response.Header().Set("Content-Type", "application/json")
-// 	params := mux.Vars(request)
-// 	companyID, err := strconv.Atoi((params["company_id"]))
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get companyid from claims"))
-// 		return
-// 	}
+func GetArticlesHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
+	response.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(request)
+	companyID, ok := params["company_id"]
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get companyid from parameters"))
+		return
+	}
 
-// 	// articleID, err := strconv.Atoi((params["article_id"]))
-// 	// if err != nil {
-// 	// 	authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get companyid from claims"))
-// 	// 	return
-// 	// }
+	var articles []model.Article
 
-// 	// if articleID != 0{
-// 	// 	var article model.Article
-// 	// 	article := getArticle(articleID)
-// 	// }
+	client := db.InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	collection := client.Database(utils.Database).Collection(utils.ArticleCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-// 	var articles []model.Article
+	cursor, err := collection.Find(ctx, bson.M{"company_id": companyID})
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{"message":"` + "Please provide correct Details, check company_id" + err.Error() + `"}`))
+		return
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var article model.Article
+		cursor.Decode(&article)
+		articles = append(articles, article)
+	}
+	if err := cursor.Err(); err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
+		return
+	}
+	json.NewEncoder(response).Encode(articles)
+}
 
+// to get role of user on particular article
+func getUserArticleRole(userID int, companyID int, articleID int) (string, error) {
+	var articleRole model.ArticleRole
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	client := db.InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	collection := client.Database("SPEC-CENTER").Collection("articlerole")
+	filter := primitive.M{"articleid": articleID, "userid": int(userID), "companyid": int(companyID)}
+	err := collection.FindOne(ctx, filter).Decode(&articleRole)
+	if err != nil {
+		return "", err
+	}
+	return articleRole.Role, nil
+}
+
+// // Inserting articlerole for newly created article for all user present in company with there role
+// func insertRolesForNewArticle(articleID, companyID int) {
 // 	client := db.InitializeDatabase()
 // 	defer client.Disconnect(context.Background())
-// 	collection := client.Database("SPEC-CENTER").Collection("article")
+// 	database := client.Database("SPEC-CENTER")
+
+// 	companyRoleCollection := database.Collection("role")
 // 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 // 	defer cancel()
+// 	filter := primitive.M{"companyid": companyID}
 
-// 	cursor, err := collection.Find(ctx, bson.M{"companyid": companyID})
+// 	cursor, err := companyRoleCollection.Find(ctx, filter)
 // 	if err != nil {
-// 		response.WriteHeader(http.StatusInternalServerError)
-// 		response.Write([]byte(`{"message":"` + "Please provide Details. " + err.Error() + `"}`))
-// 		return
+// 		log.Println(err)
 // 	}
 // 	defer cursor.Close(ctx)
-// 	for cursor.Next(ctx) {
-// 		var article model.Article
-// 		cursor.Decode(&article)
-// 		articles = append(articles, article)
-// 	}
-// 	if err := cursor.Err(); err != nil {
-// 		response.WriteHeader(http.StatusInternalServerError)
-// 		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
-// 		return
-// 	}
-// 	json.NewEncoder(response).Encode(articles)
-// }
 
-// // to get role of user on particular article
-// func getUserArticleRole(userID int, companyID int, articleID int) (string, error) {
+// 	articleRoleCollection := database.Collection("articlerole")
 // 	var articleRole model.ArticleRole
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
-// 	client := db.InitializeDatabase()
-// 	defer client.Disconnect(context.Background())
-// 	collection := client.Database("SPEC-CENTER").Collection("articlerole")
-// 	filter := primitive.M{"articleid": articleID, "userid": int(userID), "companyid": int(companyID)}
-// 	err := collection.FindOne(ctx, filter).Decode(&articleRole)
-// 	if err != nil {
-// 		return "", err
+// 	var userRole model.Roles
+
+// 	for cursor.Next(ctx) {
+// 		err := cursor.Decode(&userRole)
+// 		if err != nil {
+// 			log.Println(err)
+// 		}
+// 		articleRole.ArticleId = articleID
+// 		articleRole.CompanyId = companyID
+// 		articleRole.Role = userRole.Role
+// 		articleRole.UserId = userRole.UserId
+
+// 		_, err = articleRoleCollection.InsertOne(ctx, articleRole)
+// 		if err != nil {
+// 			log.Printf("Failed to add article role for article id : %d, user id : %d, error : %w", articleID, userRole.UserId, err)
+// 		}
+// 		log.Printf("Role on new article with article id : %d, for user id : %d , for company id : %d added successfully", articleID, userRole.UserId, companyID)
 // 	}
-// 	return articleRole.Role, nil
 // }
-
-// // // Inserting articlerole for newly created article for all user present in company with there role
-// // func insertRolesForNewArticle(articleID, companyID int) {
-// // 	client := db.InitializeDatabase()
-// // 	defer client.Disconnect(context.Background())
-// // 	database := client.Database("SPEC-CENTER")
-
-// // 	companyRoleCollection := database.Collection("role")
-// // 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// // 	defer cancel()
-// // 	filter := primitive.M{"companyid": companyID}
-
-// // 	cursor, err := companyRoleCollection.Find(ctx, filter)
-// // 	if err != nil {
-// // 		log.Println(err)
-// // 	}
-// // 	defer cursor.Close(ctx)
-
-// // 	articleRoleCollection := database.Collection("articlerole")
-// // 	var articleRole model.ArticleRole
-// // 	var userRole model.Roles
-
-// // 	for cursor.Next(ctx) {
-// // 		err := cursor.Decode(&userRole)
-// // 		if err != nil {
-// // 			log.Println(err)
-// // 		}
-// // 		articleRole.ArticleId = articleID
-// // 		articleRole.CompanyId = companyID
-// // 		articleRole.Role = userRole.Role
-// // 		articleRole.UserId = userRole.UserId
-
-// // 		_, err = articleRoleCollection.InsertOne(ctx, articleRole)
-// // 		if err != nil {
-// // 			log.Printf("Failed to add article role for article id : %d, user id : %d, error : %w", articleID, userRole.UserId, err)
-// // 		}
-// // 		log.Printf("Role on new article with article id : %d, for user id : %d , for company id : %d added successfully", articleID, userRole.UserId, companyID)
-// // 	}
-// // }
 
 func GetSingleArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
 	w.Header().Set("Content-Type", "application/json")
