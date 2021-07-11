@@ -23,7 +23,7 @@ const (
 	CompanyCollection      = "company"
 
 	//casbin urls
-	ArticleURLMatcher = "/articles"
+	ArticleURLMatcher = "/article"
 	RoleURLMatcher    = "/role"
 )
 

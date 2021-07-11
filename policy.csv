@@ -1,13 +1,11 @@
 p, superadmin, /*, *
 
 
-p, admin, /company/*/article, GET
-p, admin, /articles, GET
-p, admin, /company/*/article/*/articles, DELETE
-p, admin, /company/*/article/*/articles, PUT
+p, admin, /article, GET
+p, admin, /article, DELETE
+p, admin, /article, PUT
 
-p, member, /company/*/article, GET
-p, member, /company/*/article/*/articles, GET
-p, member, /company/*/article/*/articles, DELETE
-p, member, /company/*/article/*/articles, PUT
+p, member, /article, GET
+p, member, /article, DELETE
+p, member, /article, PUT
 
