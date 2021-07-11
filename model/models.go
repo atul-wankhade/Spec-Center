@@ -22,23 +22,23 @@ type Company struct {
 	Name string             `json:"name" bson:"name"`
 }
 
-type Roles struct {
+type UserRole struct {
 	UserEmail string `json:"email" bson:"email"`
 	CompanyId string `json:"company_id" bson:"company_id"`
 	Role      string `json:"role" bson:"role"`
 }
 
 type ArticleRole struct {
-	UserId    string `json:"user_id" bson:"user_id"`
+	UserEmail string `json:"email" bson:"email"`
 	CompanyId string `json:"company_id" bson:"company_id"`
 	ArticleId string `json:"article_id" bson:"article_id"`
 	Role      string `json:"role" bson:"role"`
 }
 
 type Article struct {
-	ID         primitive.ObjectID `json:"_id" bson:"_id"`
-	ComapanyID int                `json:"company_id" bson:"company_id"`
-	Body       string             `json:"body" bson:"body"`
+	ID        primitive.ObjectID `json:"_id" bson:"_id"`
+	CompanyID string             `json:"company_id" bson:"company_id"`
+	Body      string             `json:"body" bson:"body"`
 }
 
 type NewEntity struct {

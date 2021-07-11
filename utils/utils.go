@@ -9,20 +9,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const(
+const (
 	//Collection names
 	// MongoUrl = "mongodb://mongoservice:27017"
-	MongoUrl = "mongodb://localhost:27017"
-	Database = "SPEC-CENTER"
-	CompanyRolesCollection = "company_roles"
-	UserCollection = "user"
-	ArticleCollection = "article"
-	ArticleRoleCollection = "article_role"
-	RolesCollection = "role"
-	NewEntityCollection = "new_entity"
-	CompanyCollection = "company"
+	MongoUrl               = "mongodb://localhost:27017"
+	Database               = "SPEC-CENTER"
+	CompanyRolesCollection = "user_roles"
+	UserCollection         = "user"
+	ArticleCollection      = "article"
+	ArticleRoleCollection  = "article_role"
+	RolesCollection        = "role"
+	NewEntityCollection    = "new_entity"
+	CompanyCollection      = "company"
 
-	//
+	//casbin urls
+	ArticleURLMatcher = "/articles"
+	RoleURLMatcher    = "/role"
 )
 
 func GetHash(pwd []byte) string {
@@ -43,3 +45,9 @@ func GetEnvVariable(key string) string {
 	}
 	return os.Getenv(key)
 }
+
+// entity := model.NewEntity{Name: "article", ID: article.ArticleID, CompanyID: article.ComapanyID}
+// _, err = client.Database("SPEC-CENTER").Collection("newentity").InsertOne(ctx, entity)
+// if err != nil {
+// 	authorization.WriteError(http.StatusInternalServerError, "insert operation failed", w, err)
+// }

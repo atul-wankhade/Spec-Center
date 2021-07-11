@@ -1,192 +1,204 @@
 package controller
 
-// import (
-// 	"context"
-// 	"encoding/json"
-// 	"errors"
-// 	"fmt"
-// 	"net/http"
-// 	"strconv"
-// 	"time"
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"time"
 
-// 	"github.com/atul-wankhade/Spec-Center/authorization"
-// 	"github.com/atul-wankhade/Spec-Center/db"
-// 	"github.com/atul-wankhade/Spec-Center/model"
-// 	"github.com/gorilla/mux"
+	"github.com/atul-wankhade/Spec-Center/authorization"
+	"github.com/atul-wankhade/Spec-Center/db"
+	"github.com/atul-wankhade/Spec-Center/model"
+	"github.com/atul-wankhade/Spec-Center/utils"
+	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"gopkg.in/mgo.v2/bson"
 
-// 	"github.com/dgrijalva/jwt-go"
-// 	"go.mongodb.org/mongo-driver/bson"
-// 	"go.mongodb.org/mongo-driver/bson/primitive"
-// 	"go.mongodb.org/mongo-driver/mongo/options"
-// )
+	"github.com/dgrijalva/jwt-go"
+)
 
-// func CreateArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
-// 	w.Header().Set("Content-Type", "application/json")
+func CreateArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
+	w.Header().Set("Content-Type", "application/json")
 
-// 	var article model.Article
-// 	err := json.NewDecoder(r.Body).Decode(&article)
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST BODY", w, err)
-// 		return
-// 	}
+	var article model.Article
+	articleID := primitive.NewObjectID()
+	err := json.NewDecoder(r.Body).Decode(&article)
+	if err != nil {
+		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST BODY", w, err)
+		return
+	}
 
-// 	params := mux.Vars(r)
-// 	userCompanyID, err := strconv.Atoi((params["company_id"]))
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusInternalServerError, "decode error", w, errors.New("unable to get companyid from claims"))
-// 		return
-// 	}
+	params := mux.Vars(r)
+	companyID, ok := params["company_id"]
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get companyid from claims"))
+		return
+	}
 
-// 	if int(userCompanyID) != article.ComapanyID {
-// 		authorization.WriteError(http.StatusBadRequest, "wrong company id", w, errors.New("wrong company id"))
-// 		return
-// 	}
+	article.CompanyID = companyID
+	article.ID = articleID
 
-// 	client := db.InitializeDatabase()
-// 	defer client.Disconnect(context.Background())
-// 	collection := client.Database("SPEC-CENTER").Collection("article")
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
-// 	result, err := collection.InsertOne(ctx, article)
-// 	if err != nil {
-// 		w.WriteHeader(http.StatusConflict)
-// 		w.Write([]byte(`{"message":"` + fmt.Sprintf("Article with articleid: %d is already present in database, please provide different articleid", article.ArticleID) + `"}`))
-// 		return
-// 	}
+	client := db.InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	collection := client.Database(utils.Database).Collection(utils.ArticleCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err = collection.InsertOne(ctx, article)
+	if err != nil {
+		w.WriteHeader(http.StatusConflict)
+		w.Write([]byte(`{"message":"` + fmt.Sprintf("Article with articleid: %s is already present in database, please provide different articleid", article.ID.Hex()) + `"}`))
+		return
+	}
 
-// 	entity := model.NewEntity{Name: "article", ID: article.ArticleID, CompanyID: article.ComapanyID}
-// 	_, err = client.Database("SPEC-CENTER").Collection("newentity").InsertOne(ctx, entity)
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusInternalServerError, "insert operation failed", w, err)
-// 	}
+	w.WriteHeader(http.StatusAccepted)
+	w.Write([]byte(`{"message":"` + fmt.Sprintf("Article with article id: %s is added to company having id: %s ", articleID.Hex(), companyID) + `"}`))
+}
 
-// 	w.WriteHeader(http.StatusAccepted)
-// 	json.NewEncoder(w).Encode(result)
-// }
+func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
+	response.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(request)
+	companyID, ok := params["company_id"]
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get companyid from request parameters"))
+		return
+	}
 
-// func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
-// 	response.Header().Set("Content-Type", "application/json")
-// 	dummyarticleID := request.URL.Query().Get("articleid")
-// 	articleID, err := strconv.Atoi(dummyarticleID)
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusInternalServerError, "String conversion error", response, errors.New("unable to convert articleid into int value"))
-// 		return
-// 	}
+	articleStringID, ok := params["article_id"]
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get article id from request parameters"))
+		return
+	}
+	articleID, err := primitive.ObjectIDFromHex(articleStringID)
+	if err != nil {
+		authorization.WriteError(http.StatusInternalServerError, "Convert Error", response, errors.New("conversion error"))
+		return
+	}
 
-// 	params := mux.Vars(request)
-// 	companyID, err := strconv.Atoi((params["companyid"]))
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get companyid from claims"))
-// 		return
-// 	}
-// 	userID, ok := claims["userid"].(float64)
-// 	if !ok {
-// 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get userid from claims"))
-// 		return
-// 	}
-// 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-// 	defer cancel()
+	emailInterface, ok := claims["email"]
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get email from claims"))
+		return
+	}
+	email := fmt.Sprintf("%v", emailInterface)
 
-// 	//first finding out role on particular article from articlerole collection, using getUserArticleRole function
+	roleInterface, ok := claims["role"]
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get email from claims"))
+		return
+	}
+	role := fmt.Sprintf("%v", roleInterface)
 
-// 	fmt.Println(userID, companyID, articleID)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-// 	articleRole, err := getUserArticleRole(int(userID), int(companyID), articleID)
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST, please check request body and its value.", response, err)
-// 		return
-// 	}
+	//first finding out role on particular article from articlerole collection, using getUserArticleRole function
 
-// 	// checking role on article, if its other than admin, superadmin then user is unauthorized to delete article
+	fmt.Println(email, companyID, articleID)
 
-// 	if articleRole != "admin" && articleRole != "superadmin" {
-// 		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", response, errors.New("unauthorized"))
-// 		return
-// 	}
+	authorized := authorization.IsAuthorizedForArticle(companyID, email, role, request.Method, articleID)
+	if !authorized {
+		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", response, errors.New("unauthorized"))
+		return
+	}
 
-// 	client := db.InitializeDatabase()
-// 	defer client.Disconnect(context.Background())
-// 	// deleting the article with given id
-// 	collection := client.Database("SPEC-CENTER").Collection("article")
-// 	_, err = collection.DeleteOne(ctx, primitive.M{"articleid": articleID})
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article"))
-// 		return
-// 	}
+	client := db.InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	// deleting the article with given id
+	collection := client.Database(utils.Database).Collection(utils.ArticleCollection)
+	_, err = collection.DeleteOne(ctx, primitive.M{"_id": articleID})
+	if err != nil {
+		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article"))
+		return
+	}
 
-// 	// As article is deleted, deleting role on that articles from articlerole collection
-// 	collection1 := client.Database("SPEC-CENTER").Collection("articlerole")
-// 	_, err = collection1.DeleteMany(ctx, primitive.M{"articleid": articleID})
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article roles"))
-// 		return
-// 	}
-// 	response.WriteHeader(http.StatusOK)
-// 	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully deleted!", articleID) + `"}`))
-// }
+	// As article is deleted, deleting role on that articles from articlerole collection
+	collection1 := client.Database(utils.Database).Collection(utils.ArticleRoleCollection)
+	_, err = collection1.DeleteMany(ctx, primitive.M{"article_id": articleStringID})
+	if err != nil {
+		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article roles"))
+		return
+	}
+	response.WriteHeader(http.StatusOK)
+	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully deleted!", articleID) + `"}`))
+}
 
-// func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
-// 	response.Header().Set("Content-Type", "application/json")
-// 	var article model.Article
+func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
+	response.Header().Set("Content-Type", "application/json")
+	var article model.Article
 
-// 	err := json.NewDecoder(request.Body).Decode(&article)
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusBadRequest, "DECODE ERROR", response, err)
-// 		return
-// 	}
-// 	articleID := article.ArticleID
+	err := json.NewDecoder(request.Body).Decode(&article)
+	if err != nil {
+		authorization.WriteError(http.StatusBadRequest, "DECODE ERROR", response, err)
+		return
+	}
 
-// 	params := mux.Vars(request)
-// 	companyID, err := strconv.Atoi((params["company_id"]))
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get companyid from claims"))
-// 		return
-// 	}
+	// articleID := primitive.ObjectIDFromHex()
 
-// 	if article.ComapanyID != int(companyID) {
-// 		authorization.WriteError(http.StatusBadRequest, "Please provide correct company id", response, errors.New("wrong companyid"))
-// 		return
-// 	}
-// 	userID, ok := claims["userid"].(float64)
-// 	if !ok {
-// 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get userid from claims"))
-// 		return
-// 	}
+	params := mux.Vars(request)
+	companyID, ok := params["company_id"]
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get companyid from parameters"))
+		return
+	}
 
-// 	//first finding out role on particular article from articlerole collection, using getUserArticleRole function
-// 	articleRole, err := getUserArticleRole(int(userID), int(companyID), articleID)
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST, please check articleid and request body.", response, err)
-// 		return
-// 	}
+	articleID, err := primitive.ObjectIDFromHex(params["article_id"])
+	if err != nil {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get article id from parameters"))
+		return
+	}
 
-// 	// checking role on article, if its other than admin, superadmin then user is unauthorized to delete article
+	if article.CompanyID != companyID {
+		authorization.WriteError(http.StatusBadRequest, "Please provide correct company id", response, errors.New("wrong companyid"))
+		return
+	}
 
-// 	if articleRole != "admin" && articleRole != "superadmin" {
-// 		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", response, errors.New("unauthorized"))
-// 		return
-// 	}
+	if article.ID != articleID {
+		authorization.WriteError(http.StatusBadRequest, "Please provide correct article id", response, errors.New("wrong article id"))
+		return
+	}
 
-// 	// Updating the article with given id
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	emailInterface, ok := claims["email"]
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get email from claims"))
+		return
+	}
+	email := fmt.Sprintf("%v", emailInterface)
 
-// 	defer cancel()
+	roleInterface, ok := claims["role"]
+	if !ok {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get email from claims"))
+		return
+	}
+	role := fmt.Sprintf("%v", roleInterface)
 
-// 	client := db.InitializeDatabase()
-// 	defer client.Disconnect(context.Background())
+	authorized := authorization.IsAuthorizedForArticle(companyID, email, role, request.Method, articleID)
+	if !authorized {
+		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", response, errors.New("unauthorized"))
+		return
+	}
+	// Updating the article with given id
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
-// 	collection := client.Database("SPEC-CENTER").Collection("article")
-// 	filter := primitive.M{"articleid": articleID, "companyid": int(companyID)}
-// 	opts := options.Update().SetUpsert(true)
-// 	update := bson.D{{"$set", bson.D{{"body", article.Body}}}}
-// 	_, err = collection.UpdateOne(ctx, filter, update, opts)
-// 	if err != nil {
-// 		authorization.WriteError(http.StatusBadRequest, "update error", response, err)
-// 		return
-// 	}
-// 	response.WriteHeader(http.StatusOK)
-// 	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully updated!", articleID) + `"}`))
-// }
+	defer cancel()
+
+	client := db.InitializeDatabase()
+	defer client.Disconnect(context.Background())
+
+	collection := client.Database(utils.Database).Collection(utils.ArticleCollection)
+	filter := primitive.M{"article_id": articleID, "company_id": companyID}
+	opts := options.Update().SetUpsert(false)
+	update := bson.D{{"$set", bson.D{{"body", article.Body}}}}
+	_, err = collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		authorization.WriteError(http.StatusBadRequest, "update error", response, err)
+		return
+	}
+	response.WriteHeader(http.StatusOK)
+	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully updated!", articleID) + `"}`))
+}
 
 // func GetArticlesHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
 // 	response.Header().Set("Content-Type", "application/json")
@@ -290,3 +302,26 @@ package controller
 // // 		log.Printf("Role on new article with article id : %d, for user id : %d , for company id : %d added successfully", articleID, userRole.UserId, companyID)
 // // 	}
 // // }
+
+func GetSingleArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+
+	articleID, err := primitive.ObjectIDFromHex(params["article_id"])
+	if err != nil {
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get article id from parameters"))
+		return
+	}
+	client := db.InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	var article model.Article
+	filter := primitive.M{"_id": articleID}
+	err = client.Database(utils.Database).Collection(utils.ArticleCollection).FindOne(context.Background(), filter).Decode(&article)
+	if err != nil {
+		authorization.WriteError(http.StatusInternalServerError, "unable to get article", w, err)
+		return
+	}
+	json.NewEncoder(w).Encode(article)
+	w.WriteHeader(http.StatusOK)
+
+}

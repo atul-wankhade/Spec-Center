@@ -9,70 +9,76 @@ import (
 	"github.com/atul-wankhade/Spec-Center/model"
 	"github.com/atul-wankhade/Spec-Center/utils"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"gopkg.in/mgo.v2/bson"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// // for preventing duplicate entry with same userid and articleid in user and article collection.
-// func Indexing() {
-// 	client := InitializeDatabase()
-// 	defer client.Disconnect(context.Background())
-// 	userCollection := client.Database(utils.Database).Collection("user")
-// 	_, err := userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-// 		Keys: bson.M{
-// 			"id": 1,
-// 		},
-// 		Options: options.Index().SetUnique(true),
-// 	})
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+// for preventing duplicate entry with same userid and articleid in user and article collection.
+func Indexing() {
+	client := InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	userCollection := client.Database(utils.Database).Collection(utils.UserCollection)
+	_, err := userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys: bson.M{
+			"email": 1,
+		},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-// 	_, err = userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-// 		Keys: bson.M{
-// 			"email": 1,
-// 		},
-// 		Options: options.Index().SetUnique(true),
-// 	})
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
+	// 	articleCollection := client.Database(utils.Database).Collection("article")
+	// 	_, err = articleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+	// 		Keys: bson.M{
+	// 			"articleid": 1,
+	// 		},
+	// 		Options: options.Index().SetUnique(true),
+	// 	})
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// roleCollection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
+	// _, err = roleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+	// 	Keys:    []bson.M{{"email", int32(1)}, {"company_id", int32(1)}},
+	// 	Options: options.Index().SetUnique(true),
+	// })
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// 	companyCollection := client.Database(utils.Database).Collection("company")
+	// 	_, err = companyCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+	// 		Keys: bson.M{
+	// 			"id": 1,
+	// 		},
+	// 		Options: options.Index().SetUnique(true),
+	// 	})
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	log.Println("Indexing done..!")
+}
 
-// 	articleCollection := client.Database(utils.Database).Collection("article")
-// 	_, err = articleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-// 		Keys: bson.M{
-// 			"articleid": 1,
-// 		},
-// 		Options: options.Index().SetUnique(true),
-// 	})
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	roleCollection := client.Database(utils.Database).Collection("role")
-// 	_, err = roleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-// 		Keys: bson.M{
-// 			"userid": 1,
-// 		},
-// 		Options: options.Index().SetUnique(true),
-// 	})
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	companyCollection := client.Database(utils.Database).Collection("company")
-// 	_, err = companyCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-// 		Keys: bson.M{
-// 			"id": 1,
-// 		},
-// 		Options: options.Index().SetUnique(true),
-// 	})
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	log.Println("Indexing done..!")
-// }
+func AddRoles() {
+	superadminRole := model.Role{ID: primitive.NewObjectID(), Name: "superadmin"}
+	adminRole := model.Role{ID: primitive.NewObjectID(), Name: "admin"}
+	memberRole := model.Role{ID: primitive.NewObjectID(), Name: "member"}
+	anonymousRole := model.Role{ID: primitive.NewObjectID(), Name: "anonymous"}
 
-var gslabID, kpointID primitive.ObjectID
+	client := InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	rolesCollection := client.Database(utils.Database).Collection(utils.RolesCollection)
+	_, err := rolesCollection.InsertMany(context.Background(), []interface{}{superadminRole, adminRole, memberRole, anonymousRole})
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("roles entrys added")
+
+}
+
+var gslabID, kpointID, gslabUserID, kpointUserID primitive.ObjectID
 
 // SuperadminEntry for entering  default superadmin and its role for each company in database.
 func SuperadminEntry() {
@@ -93,11 +99,16 @@ func SuperadminEntry() {
 	var superadminGSLAB, superadminKpoint model.User
 	gslabID = primitive.NewObjectID()
 	kpointID = primitive.NewObjectID()
+	gslabUserID = primitive.NewObjectID()
+	kpointUserID = primitive.NewObjectID()
+
+	superadminGSLAB.ID = gslabUserID
 	superadminGSLAB.FirstName = "atul"
 	superadminGSLAB.LastName = "wankhade"
 	superadminGSLAB.Email = "atul@gmail.com"
 	superadminGSLAB.Password = utils.GetHash([]byte(passSuperadminGSLAB))
 
+	superadminKpoint.ID = kpointUserID
 	superadminKpoint.FirstName = "bhushan"
 	superadminKpoint.LastName = "gupta"
 	superadminKpoint.Email = "bhushan@gmail.com"
@@ -107,12 +118,12 @@ func SuperadminEntry() {
 	if err != nil {
 		log.Println(err)
 	}
-	var roleForGSLAB, roleForKpoint model.Roles
+	var roleForGSLAB, roleForKpoint model.UserRole
 	roleForKpoint.UserEmail = "bhushan@gmail.com"
-	roleForKpoint.CompanyId = kpointID.String()
+	roleForKpoint.CompanyId = kpointID.Hex()
 	roleForKpoint.Role = "superadmin"
 
-	roleForGSLAB.CompanyId = gslabID.String()
+	roleForGSLAB.CompanyId = gslabID.Hex()
 	roleForGSLAB.Role = "superadmin"
 	roleForGSLAB.UserEmail = "atul@gmail.com"
 	_, err = roleCollection.InsertMany(ctx, []interface{}{roleForGSLAB, roleForKpoint})
@@ -128,6 +139,7 @@ func CompanyEntry() {
 	gslab = model.Company{ID: gslabID, Name: "gslab"}
 	kpoint = model.Company{ID: kpointID, Name: "kpoint"}
 	client := InitializeDatabase()
+	defer client.Disconnect(context.Background())
 	companyCollection := client.Database(utils.Database).Collection(utils.CompanyCollection)
 	_, err := companyCollection.InsertMany(context.Background(), []interface{}{gslab, kpoint})
 	if err != nil {
