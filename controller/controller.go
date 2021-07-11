@@ -31,7 +31,7 @@ func Start() {
 	router.Handle("/company/{company_id}/articles", authorization.IsAuthorized(authEnforcer, CreateArticleHandler)).Methods("POST")
 
 	// //ROLE CHANGE :- only superadmin can change role of other user.
-	// router.Handle("/company/{company_id}/user/{email}/article/{article_id}/role", authorization.IsAuthorized(authEnforcer, UpdateArticleRoleHandler)).Methods("PUT")
+	router.Handle("/company/{company_id}/user/{email}/article/{article_id}/role", authorization.IsAuthorized(authEnforcer, UpdateArticleRoleHandler)).Methods("PUT")
 	router.Handle("/company/{company_id}/user/{email}/role", authorization.IsAuthorized(authEnforcer, UpdateCompanyRoleHandler)).Methods("PUT")
 
 	// router.Use(authorization.Authorizer(authEnforcer))
