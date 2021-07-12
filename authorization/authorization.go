@@ -83,7 +83,7 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		claims["role"] = userRole.Role
 
 		var url string
-		if strings.Contains(r.URL.Path, "/article") {
+		if strings.Contains(r.URL.Path, "/article") && !strings.Contains(r.URL.Path, "/role") {
 			url = utils.ArticleURLMatcher
 		} else if strings.Contains(r.URL.Path, "/role") {
 			url = utils.RoleURLMatcher

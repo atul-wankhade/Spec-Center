@@ -19,10 +19,36 @@ import (
 func Indexing() {
 	client := InitializeDatabase()
 	defer client.Disconnect(context.Background())
+
+	// Index for user collection based on email
 	userCollection := client.Database(utils.Database).Collection(utils.UserCollection)
 	_, err := userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys: bson.M{
 			"email": 1,
+		},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Index for role collection based on role name
+	roleCollection := client.Database(utils.Database).Collection(utils.RolesCollection)
+	_, err = roleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys: bson.M{
+			"name": 1,
+		},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Index for company collection based on company name
+	companyCollection := client.Database(utils.Database).Collection(utils.CompanyCollection)
+	_, err = companyCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys: bson.M{
+			"name": 1,
 		},
 		Options: options.Index().SetUnique(true),
 	})
