@@ -134,11 +134,11 @@
 
 #### 8. To change role of user in company :- Only superadmin can change role of other user.<br/>
 ```
-   PUT: localhost:8080/company/{company_id}/user/{email}/role <br/>
+   PUT: localhost:8080/company/{company_id}/user/{email}/role
 ```
 #### 9. To change role of user on particular article :- Only superadmin can change role of other user on particular article.<br/>
 ```
-   PUT: localhost:8080/company/{company_id}/user/{email}/article/{article_id}/role <br/>
+   PUT: localhost:8080/company/{company_id}/user/{email}/article/{article_id}/role
 ```
 
 ## APIs
@@ -166,7 +166,7 @@
 **Method:** POST<br/>
 **Description:** <br/>1. Only superadmin can add user in company by giving company_id and user details including role in json body.
 
-<br/> 2. Once user is added in company, same time in role collection we are updating role of that user in company.<br/>
+<br/> 2. Once user is added in company, same time in **role collection** we are updating role of that user in company.<br/>
 
 <br/> 3.Here user **email** is unique, duplicate entry with same email is not allowed.<br/>
 
@@ -190,7 +190,7 @@
 #### 3. GET all articles
 **API:** **localhost:8080/company/{company_id}/article**<br/>
 **Method:** GET<br/>
-**Description:** <br/>To Get all articles in provided company, only admin, member and superadmin can see all articles if they belongs to that company<br/>
+**Description:** <br/>To Get all articles in provided company, only admin, member and superadmin can see all articles.<br/>
 **Response:** (for reference only)
 ```
    [
@@ -209,7 +209,7 @@
 #### 4. GET single article 
 **API:** **localhost:8080/company/{company_id}/article/{article_id}/article**<br/>
 **Method:** GET<br/>
-**Description:** <br/>To Get single article by it's article_id in provided company, only admin, member and superadmin can read  article if they belongs to that company<br/>
+**Description:** <br/>To Get single article by it's **article_id** in provided company, only admin, member and superadmin can read  article.<br/>
 **Response:** (for reference only)
 ```
   {
@@ -241,8 +241,8 @@
 **API:** **localhost:8080/company/{company_id}/article/{article_id}/article**<br/>
 **Method:** PUT<br/>
 **Description:**
-<br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".<br/>
-<br/>2. After accessing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to update that article.<br/>
+<br/>1. **superadmin,admin** and **member** have access to this api, checked by **Casbin**.<br/>
+<br/>2. User has specific access to the articles apart from there role, which is verified internally. Roles related to articles are stored in **article_role** collection.<br/>
 
 **Payload**:
 ```
@@ -262,8 +262,8 @@
 **Method:** DELETE<br/>
 **Description:**
 <br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".<br/>
-<br/>2. After accesing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to delete that article.<br/>
-<br/>3. After deleting the article all entries related to that article_id in article role collection will be deleted<br/>
+<br/>2. **superadmin** and  **admin** access on article level has given permission to delete the article.<br/>
+<br/>3. After deleting the article all entries related to that article in **article_role** collection will be deleted<br/>
 
 **Response:** (for reference only)
 ```
@@ -276,8 +276,8 @@
 **API:** **localhost:8080/company/{company_id}/user/{email}/role**<br/>
 **Method:** PUT<br/>
 **Description:**
-<br/>1. Only superadmin have access to this api, and it's checked by "Cashbin".<br/>
-<br/>2. After changing role of user, if user have special role on particular article is reset by deleting related documents to that user in article role collection, now user have default role as company role on every article in company.<br/>
+<br/>1. Only superadmin have access to this api, and it's checked by **Casbin**.<br/>
+<br/>2. After changing role of user, if user have special access on particular article is reset by deleting related documents to that user in **article_role** collection, now user have default role as company role on every article in company.<br/>
 **Payload**:
 ```
    {
@@ -295,7 +295,7 @@
 **API:** ***localhost:8080/company/{company_id}/user/{email}/role**<br/>
 **Method:** PUT<br/>
 **Description:**
-<br/> Only superadmin have access to this api, and it's checked by "Cashbin" and can change special role of user on particular article that will upated in articlerole collction if entry already present or it will be added to article role collection. <br/>
+<br/> Only superadmin have access to this api, and it's checked by **Casbin** and can change special role of user on particular article that will upated in **article_role** collction if entry already present or it will be added to article role collection. <br/>
 
 **Payload**:
 ```
