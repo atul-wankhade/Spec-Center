@@ -8,9 +8,11 @@ import (
 
 	"errors"
 	"fmt"
-	"github.com/atul-wankhade/Spec-Center/utils"
 	"log"
 	"net/http"
+
+	"github.com/atul-wankhade/Spec-Center/utils"
+
 	//"strings"
 
 	"github.com/casbin/casbin"
@@ -65,31 +67,6 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 			return
 		}
 
-		//if role != "superadmin" && strings.Contains(r.URL.Path, "/article") {
-		//	var article model.ArticleRole
-		//	articleID :=  r.URL.Query().Get("articleid")
-		//	fmt.Println("#########",articleID)
-		//	fmt.Println("#########@@@@@@@@",companyID, int(companyID))
-		////	filter := []primitive.M{{"articleid": articleID}, {"companyid": companyID}}
-		//	collection := Client.Database("SPEC-CENTER").Collection("articlerole")
-		//	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-		//	err := collection.FindOne(ctx, primitive.M{"articleid": articleID,"companyid": companyID}).Decode(&article)
-		//	if err != nil {
-		//		WriteError(http.StatusInternalServerError, "DECODE ERROR", w, errors.New("unable to decode article"))
-		//		return
-		//	}
-		//	fmt.Println("cheking error ",articleID)
-		//
-		//
-		//	articleRole := article.Role
-		//
-		//	if (articleRole == "member" && r.Method == "GET") || articleRole == "admin" {
-		//		endpoint(w, r, claims)
-		//	} else {
-		//		WriteError(http.StatusUnauthorized, "UNAUTHORIZED", w, errors.New("user unauthorized"))
-		//		return
-		//	}
-		//}
 		fmt.Println("FINISHED")
 		endpoint(w, r, claims)
 
