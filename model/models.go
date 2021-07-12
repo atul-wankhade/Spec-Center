@@ -1,45 +1,53 @@
 package model
 
-import "go.mongodb.org/mongo-driver/mongo"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+)
 
 type Database struct {
 	Client *mongo.Client
 }
 
 type User struct {
-	ID        int    `json:"id" bson:"id"`
-	FirstName string `json:"firstname" bson:"firstname"`
-	LastName  string `json:"lastname" bson:"lastname"`
-	Email     string `json:"email" bson:"email"`
-	Password  string `json:"password" bson:"password"`
+	ID        primitive.ObjectID `json:"_id" bson:"_id"`
+	FirstName string             `json:"first_name" bson:"first_name"`
+	LastName  string             `json:"last_name" bson:"last_name"`
+	Email     string             `json:"email" bson:"email"`
+	Password  string             `json:"password" bson:"password"`
 }
 
 type Company struct {
-	ID   int    `json:"id" bson:"id"`
-	Name string `json:"name" bson:"name"`
+	ID   primitive.ObjectID `json:"_id" bson:"_id"`
+	Name string             `json:"name" bson:"name"`
 }
 
-type Roles struct {
-	UserId    int    `json:"userid" bson:"userid"`
-	CompanyId int    `json:"companyid" bson:"companyid"`
+type UserRole struct {
+	UserEmail string `json:"email" bson:"email"`
+	CompanyId string `json:"company_id" bson:"company_id"`
 	Role      string `json:"role" bson:"role"`
 }
 
 type ArticleRole struct {
-	UserId    int    `json:"userid" bson:"userid"`
-	CompanyId int    `json:"companyid" bson:"companyid"`
-	ArticleId int    `json:"articleid" bson:"articleid"`
+	UserEmail string `json:"email" bson:"email"`
+	CompanyId string `json:"company_id" bson:"company_id"`
+	ArticleId string `json:"article_id" bson:"article_id"`
 	Role      string `json:"role" bson:"role"`
 }
 
 type Article struct {
-	ComapanyID int    `json:"companyid" bson:"companyid"`
-	ArticleID  int    `json:"articleid" bson:"articleid"`
-	Body       string `json:"body" bson:"body"`
+	ID        primitive.ObjectID `json:"_id" bson:"_id"`
+	CompanyID string             `json:"company_id" bson:"company_id"`
+	Body      string             `json:"body" bson:"body"`
 }
 
 type NewEntity struct {
 	Name      string `json:"name" bson:"name"`
 	ID        int    `json:"id" bson:"id"`
-	CompanyID int    `json:"companyid" bson:"companyid"`
+	CompanyID int    `json:"company_id" bson:"company_id"`
+}
+
+type Role struct {
+	ID   primitive.ObjectID `json:"_id" bson:"_id"`
+	Name string             `json:"name" bson:"name"`
 }

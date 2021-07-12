@@ -3,22 +3,18 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/atul-wankhade/Spec-Center/db"
 	"github.com/atul-wankhade/Spec-Center/model"
 	"github.com/atul-wankhade/Spec-Center/utils"
-	"log"
-	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
-
-
 
 var SECRET = utils.GetEnvVariable("SECRET")
 var SECRET_KEY = []byte(SECRET)
@@ -28,16 +24,13 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 
 	var user model.User
 	var dbUser model.User
-	var role model.Roles
-
-	params := mux.Vars(request)
-	companyID, _ := strconv.Atoi((params["companyid"]))
+	// var role model.Roles
 
 	json.NewDecoder(request.Body).Decode(&user)
 
 	client := db.InitializeDatabase()
 	defer client.Disconnect(context.Background())
-	collection := client.Database("SPEC-CENTER").Collection("user")
+	collection := client.Database(utils.Database).Collection(utils.UserCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -48,23 +41,11 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	collection = client.Database("SPEC-CENTER").Collection("role")
-	err = collection.FindOne(ctx, primitive.M{"userid": dbUser.ID, "companyid": companyID}).Decode(&role)
-	if err != nil {
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`{"message":"` + "Please provide correct companyid and other details. " + err.Error() + `"}`))
-		return
-	}
-	userRole := role.Role
-	dbUserId := dbUser.ID
+	// userRole := role.Role
+	// dbUserId := dbUser.ID
+	userEmail := dbUser.Email
 	userPass := []byte(user.Password)
 	dbPass := []byte(dbUser.Password)
-
-	// checking companyid is correct or not
-	//if companyID != role.CompanyId {
-	//	authorization.WriteError(http.StatusBadRequest, "wrong company id", response, errors.New("wrong company"))
-	//	return
-	//}
 
 	passErr := bcrypt.CompareHashAndPassword(dbPass, userPass)
 	if passErr != nil {
@@ -72,7 +53,7 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 		response.Write([]byte(`{"response":"Wrong Password!"}`))
 		return
 	}
-	jwtToken, err := GenerateJWT(dbUserId, companyID, userRole)
+	jwtToken, err := GenerateJWT(userEmail)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
@@ -81,14 +62,12 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	response.Write([]byte(`{"token":"` + jwtToken + `"}`))
 }
 
-func GenerateJWT(userID int, companyID int, userRole string) (string, error) {
+func GenerateJWT(userEmail string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["authorized"] = true
-	claims["userid"] = userID
-	claims["companyid"] = companyID
-	claims["userrole"] = userRole
-	claims["exp"] = time.Now().Add(time.Minute * 30)
+	claims["user_email"] = userEmail
+	claims["exp"] = time.Now().Add(time.Minute * 10).Unix()
 	tokenString, err := token.SignedString(SECRET_KEY)
 	if err != nil {
 		log.Println("Error in JWT token generation")
@@ -96,5 +75,3 @@ func GenerateJWT(userID int, companyID int, userRole string) (string, error) {
 	}
 	return tokenString, nil
 }
-
-

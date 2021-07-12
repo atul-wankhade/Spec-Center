@@ -8,7 +8,8 @@ import (
 
 	"github.com/atul-wankhade/Spec-Center/model"
 	"github.com/atul-wankhade/Spec-Center/utils"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"gopkg.in/mgo.v2/bson"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -18,18 +19,10 @@ import (
 func Indexing() {
 	client := InitializeDatabase()
 	defer client.Disconnect(context.Background())
-	userCollection := client.Database("SPEC-CENTER").Collection("user")
-	_, err := userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.M{
-			"id": 1,
-		},
-		Options: options.Index().SetUnique(true),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	_, err = userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+	// Index for user collection based on email
+	userCollection := client.Database(utils.Database).Collection(utils.UserCollection)
+	_, err := userCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys: bson.M{
 			"email": 1,
 		},
@@ -39,111 +32,165 @@ func Indexing() {
 		log.Fatal(err)
 	}
 
-	articleCollection := client.Database("SPEC-CENTER").Collection("article")
-	_, err = articleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys: bson.M{
-			"articleid": 1,
-		},
-		Options: options.Index().SetUnique(true),
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	roleCollection := client.Database("SPEC-CENTER").Collection("role")
+	// Index for role collection based on role name
+	roleCollection := client.Database(utils.Database).Collection(utils.RolesCollection)
 	_, err = roleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys: bson.M{
-			"userid": 1,
+			"name": 1,
 		},
 		Options: options.Index().SetUnique(true),
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	companyCollection := client.Database("SPEC-CENTER").Collection("company")
+
+	// Index for company collection based on company name
+	companyCollection := client.Database(utils.Database).Collection(utils.CompanyCollection)
 	_, err = companyCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
 		Keys: bson.M{
-			"id": 1,
+			"name": 1,
 		},
 		Options: options.Index().SetUnique(true),
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Indexing done..!")
+
+	// Index for user role collection based on 2 fields , email , company_id
+	userRoleCollection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
+	_, err = userRoleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    primitive.D{{Key: "email", Value: 1}, {Key: "company_id", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Index for article role collection based on 2 fields , email , company_id
+	articleRoleCollection := client.Database(utils.Database).Collection(utils.ArticleRoleCollection)
+	_, err = articleRoleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    primitive.D{{Key: "email", Value: 1}, {Key: "article_id", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
+
+func AddRoles() {
+	superadminRole := model.Role{ID: primitive.NewObjectID(), Name: "superadmin"}
+	adminRole := model.Role{ID: primitive.NewObjectID(), Name: "admin"}
+	memberRole := model.Role{ID: primitive.NewObjectID(), Name: "member"}
+	anonymousRole := model.Role{ID: primitive.NewObjectID(), Name: "anonymous"}
+
+	client := InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	rolesCollection := client.Database(utils.Database).Collection(utils.RolesCollection)
+	_, err := rolesCollection.InsertMany(context.Background(), []interface{}{superadminRole, adminRole, memberRole, anonymousRole})
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("roles entrys added")
+
+}
+func CheckRole(userRole string) bool {
+	if userRole == "superadmin" {
+		return false
+	}
+	client := InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	rolecollection := client.Database(utils.Database).Collection(utils.RolesCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	result := rolecollection.FindOne(ctx, primitive.M{"name": userRole})
+	return result.Err() == nil
+}
+
+var gslabUserID, kpointUserID primitive.ObjectID
+var gslabIDstring = "60ebe75e02bcbdc4d7ae5b43"
+var kpointIDstring = "60ebe75e02bcbdc4d7ae5b44"
 
 // SuperadminEntry for entering  default superadmin and its role for each company in database.
 func SuperadminEntry() {
 	// retrieving password from env variables
 	passSuperadminGSLAB := utils.GetEnvVariable("gslab_pass")
-	passSuperadminIBM := utils.GetEnvVariable("ibm_pass")
+	passSuperadminKpoint := utils.GetEnvVariable("kpoint_pass")
 
-	fmt.Println("!!!!!!!!!!!", passSuperadminIBM, passSuperadminGSLAB)
+	fmt.Println("!!!!!!!!!!!", passSuperadminKpoint, passSuperadminGSLAB)
 
 	client := InitializeDatabase()
 	defer client.Disconnect(context.Background())
-	userCollection := client.Database("SPEC-CENTER").Collection("user")
-	roleCollection := client.Database("SPEC-CENTER").Collection("role")
+	userCollection := client.Database(utils.Database).Collection(utils.UserCollection)
+	roleCollection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var superadminGSLAB, superadminIBM model.User
+	var superadminGSLAB, superadminKpoint model.User
+	gslabID, err := primitive.ObjectIDFromHex(gslabIDstring)
+	if err != nil {
+		log.Println("unable to convert to object id")
+	}
+	kpointID, err := primitive.ObjectIDFromHex(kpointIDstring)
+	if err != nil {
+		log.Println("unable to convert to object id")
+	}
+	gslabUserID = primitive.NewObjectID()
+	kpointUserID = primitive.NewObjectID()
 
-	superadminGSLAB.ID = 1
+	superadminGSLAB.ID = gslabUserID
 	superadminGSLAB.FirstName = "atul"
 	superadminGSLAB.LastName = "wankhade"
-	superadminGSLAB.Email = "atul@gslab.com"
+	superadminGSLAB.Email = "atul@gmail.com"
 	superadminGSLAB.Password = utils.GetHash([]byte(passSuperadminGSLAB))
 
-	superadminIBM.ID = 2
-	superadminIBM.FirstName = "bhushan"
-	superadminIBM.LastName = "gupta"
-	superadminIBM.Email = "bhushan@ibm.com"
-	superadminIBM.Password = utils.GetHash([]byte(passSuperadminIBM))
+	superadminKpoint.ID = kpointUserID
+	superadminKpoint.FirstName = "bhushan"
+	superadminKpoint.LastName = "gupta"
+	superadminKpoint.Email = "bhushan@gmail.com"
+	superadminKpoint.Password = utils.GetHash([]byte(passSuperadminKpoint))
 
-	_, err := userCollection.InsertMany(ctx, []interface{}{superadminGSLAB, superadminIBM})
+	_, err = userCollection.InsertMany(ctx, []interface{}{superadminGSLAB, superadminKpoint})
 	if err != nil {
 		log.Println(err)
 	}
-	var roleForGSLAB, roleForIBM model.Roles
-	roleForGSLAB.CompanyId = 1
-	roleForGSLAB.UserId = 1
-	roleForGSLAB.Role = "superadmin"
+	var roleForGSLAB, roleForKpoint model.UserRole
+	roleForKpoint.UserEmail = "bhushan@gmail.com"
+	roleForKpoint.CompanyId = kpointID.Hex()
+	roleForKpoint.Role = "superadmin"
 
-	roleForIBM.CompanyId = 2
-	roleForIBM.UserId = 2
-	roleForIBM.Role = "superadmin"
-	_, err = roleCollection.InsertMany(ctx, []interface{}{roleForGSLAB, roleForIBM})
+	roleForGSLAB.CompanyId = gslabID.Hex()
+	roleForGSLAB.Role = "superadmin"
+	roleForGSLAB.UserEmail = "atul@gmail.com"
+	_, err = roleCollection.InsertMany(ctx, []interface{}{roleForGSLAB, roleForKpoint})
 
 	if err != nil {
 		log.Println(err, "role not added for superadmin user in database")
 	}
 	log.Println("Superadmin entries inserted")
-}
 
-func CompanyEntry() {
-	var gslab, ibm model.Company
-	gslab = model.Company{ID: 1, Name: "gslab"}
-	ibm = model.Company{ID: 2, Name: "ibm"}
-	client := InitializeDatabase()
-	companyCollection := client.Database("SPEC-CENTER").Collection("company")
-	_, err := companyCollection.InsertMany(context.Background(), []interface{}{gslab, ibm})
+	var gslab, kpoint model.Company
+	gslab = model.Company{ID: gslabID, Name: "gslab"}
+	kpoint = model.Company{ID: kpointID, Name: "kpoint"}
+	companyCollection := client.Database(utils.Database).Collection(utils.CompanyCollection)
+	_, err = companyCollection.InsertMany(context.Background(), []interface{}{gslab, kpoint})
 	if err != nil {
 		log.Println(err)
 	}
 	log.Println("company entrys added")
+
+}
+
+func CompanyEntry() {
 }
 
 func InitializeDatabase() *mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// for running on docker, mongoservice is docker container name mentioned in docker-compose.
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://mongoservice:27017"))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(utils.MongoUrl))
 
-	// for running locally
-	//client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		log.Fatal(err)
 	} else {
