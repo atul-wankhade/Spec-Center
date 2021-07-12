@@ -23,216 +23,222 @@
 #### Create .env file for all environment variable
 #### 1. As we have two company right now so create password for superadmin in that file as follows :-
 ```
-      ibm_pass=<password for ibm>
-      gslab_pass=password for gslab>
+   gslab_pass=password for gslab> 
+   kpoint_pass=<password for kpoint>
 ```
 #### 2. Also need to setup one more env variable in .env for jwt token secret as follows
 ```
-      SECRET=<secret value>
+   SECRET=<secret value>
 ```
 
 ### Mongo Setup
 #### Database
 #### Name :- SPEC-CENTER <br/>
 #### Collections
-#### 1. user :- Struct corresponding to database entity is as below.
+#### 1. **user** :- This is for all users availables in database.
+#### Struct corresponding to database entity is as below.
    ```
    type User struct {
-      ID        int    `json:"id" bson:"id"`
-      FirstName string `json:"firstname" bson:"firstname"`
-      LastName  string `json:"lastname" bson:"lastname"`
-      Email     string `json:"email" bson:"email"`
-      Password  string `json:"password" bson:"password"`
+      ID        primitive.ObjectID `json:"_id" bson:"_id"`
+      FirstName string             `json:"first_name" bson:"first_name"`
+      LastName  string             `json:"last_name" bson:"last_name"`
+      Email     string             `json:"email" bson:"email"`
+      Password  string             `json:"password" bson:"password"`
    }
    ```
-#### 2. role :- Struct corresponding to database entity is as below.
+#### 2. **role** :- This is for predefined valid roles that can be used for all companies
+#### Struct corresponding to database entity is as below.
    ```
-   type Roles struct {
-       UserId    int    `json:"userid" bson:"userid"`
-       CompanyId int    `json:"companyid" bson:"companyid"`
-       Role      string `json:"role" bson:"role"`
+   type Role struct {
+      ID   primitive.ObjectID `json:"_id" bson:"_id"`
+      Name string             `json:"name" bson:"name"`  
    }
    ```
-#### 3. article:- Struct corresponding to database entity is as below.
+#### 3. **user_roles** :- This is for role of all user corresponding to their company
+#### Struct corresponding to database entity is as below.
+   ```
+   type UserRole struct {
+      UserEmail string `json:"email" bson:"email"`
+      CompanyId string `json:"company_id" bson:"company_id"`
+      Role      string `json:"role" bson:"role"`
+   }
+   ```
+  
+#### 4. **article**:- This is for all articles of all companies in database.
+#### Struct corresponding to database entity is as below.
    ```
    type Article struct {
-      ComapanyID int   `json:"companyid" bson:"companyid"`
-      ArticleID  int   `json:"articleid" bson:"articleid"`
-      Body       string   `json:"body" bson:"body"`
-   } 
-   ```
-#### 4. articlerole:- Struct corresponding to database entity is as below.
-   ```
-   type ArticleRole struct {
-       UserId    int    `json:"userid" bson:"userid"`
-       CompanyId int    `json:"companyid" bson:"companyid"`
-       ArticleId int    `json:"articleid" bson:"articleid"`
-       Role      string `json:"role" bson:"role"`
+      ID        primitive.ObjectID `json:"_id" bson:"_id"`
+      CompanyID string             `json:"company_id" bson:"company_id"`
+      Body      string             `json:"body" bson:"body"`
    }
    ```
-#### 5. company:- Struct corresponding to database entity is as below.
+#### 5. **articlerole**:- We are using this when user have other role than its company role on particular article, so we have more control based on particular article.
+#### Struct corresponding to database entity is as below.
+   ```
+   type ArticleRole struct {
+      UserEmail string `json:"email" bson:"email"`
+      CompanyId string `json:"company_id" bson:"company_id"`
+      ArticleId string `json:"article_id" bson:"article_id"`
+      Role      string `json:"role" bson:"role"`
+   }
+   ```
+#### 6. **company**:- This is for storing details of all companies.
+#### Struct corresponding to database entity is as below.
    ```
    type Company struct {
-       ID         string   `json:"id" bson:"id"`
-       Name       string   `json:"name" bson:"name"`
+      ID   primitive.ObjectID `json:"_id" bson:"_id"`
+      Name string             `json:"name" bson:"name"`
    }
    ```
 
-#### Initial Data in database
+### Initial Data in database 
+#### we are handling all below requirements through code itself.
+
 <br/>1. superadmin user details for each company should need to insert initially.
 <br/>2. Also, same user with superadmin role need to be added in role collection.
+<br/>2. Also, all companies details need to be insert in company collection.
 
 ## APIs List
 
-#### Login in Company
+#### 1. Login in Company
 ```
-   POST: localhost:8080/login/{companyid} 
+   POST: localhost:8080/login
 ```
-#### To add User
+#### 2. To add User
 ```
-   POST: localhost:8080/adduser
+   POST: localhost:8080/company/{company_id}/user
 ```
 #### ARTICLE RELATED APIs
-##### To get all article in company.
+##### 3. To get all article in company.
 ```
-   GET: localhost:8080/all_articles
+   GET: localhost:8080/company/{company_id}/article
 ```
-##### To create article for company.
+##### 4. To get single article in company.
 ```
-   POST: localhost:8080/article
+   GET: localhost:8080/company/{company_id}/article/{article_id}/article
 ```
-##### To update article in company.
+##### 5. To create article for company.
 ```
-   PUT: localhost:8080/article
+   POST: localhost:8080/company/{company_id}/article
 ```
-##### To delete article in company.
+##### 6. To update article in company.
 ```
-   DELELTE: localhost:8080/article
+   PUT: localhost:8080/company/{company_id}/article/{article_id}/article
+```
+##### 7. To delete article in company.
+```
+   DELELTE: localhost:8080/article/{article_id}/article
 ```
 ### ROLE CHANGE APIs
 
-#### To change role of user in company :- Only superadmin can change role of other user.<br/>
+#### 8. To change role of user in company :- Only superadmin can change role of other user.<br/>
 ```
-   PUT: localhost:8080/role <br/>
+   PUT: localhost:8080/company/{company_id}/user/{email}/role <br/>
 ```
-#### Only superadmin can change role of other user on particular article.<br/>
+#### 9. To change role of user on particular article :- Only superadmin can change role of other user on particular article.<br/>
 ```
-   PUT: localhost:8080/articlerole/{articleid} <br/>
+   PUT: localhost:8080/company/{company_id}/user/{email}/article/{article_id}/role <br/>
 ```
-
 
 ## APIs
 
-### User login
+### 1. User login
 
-**API:** localhost:8080/login/{companyid}<br/>
+**API:** localhost:8080/login<br/>
 **Method:** POST<br/>
 **Payload**:
 ```
-{
-    "email": "<user email>",
-    "password" :"<password>"
-}
+   {
+      "email": "<user email>",
+      "password" :"<password>"
+   }
 ```
 
 **Response:**
 ```
-{
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjb21wYW55aWQiOjEsImV4cCI6IjIwMjEtMDctMDZUMTA6MjQ6MTMuNzI5ODU2NTQ3KzA1OjMwIiwidXNlcmlkIjoxLCJ1c2Vycm9sZSI6InN1cGVyYWRtaW4ifQ.x8Ig1OU5JghF0pefemOWcbA_QwOVhqXETHStkhQnxjI"
-}
+   {
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjb21wYW55aWQiOjEsImV4cCI6IjIwMjEtMDctMDZUMTA6MjQ6MTMuNzI5ODU2NTQ3KzA1OjMwIiwidXNlcmlkIjoxLCJ1c2Vycm9sZSI6InN1cGVyYWRtaW4ifQ.x8Ig1OU5JghF0pefemOWcbA_QwOVhqXETHStkhQnxjI"
+   }
 ```
-#### Once user is logged inside company, comapanyid is taken from  login generated token.
-#### following api is works for same logged in company.
-
-### Add User
-**API:** localhost:8080/adduser<br/>
+### 2. Add User
+**API:** localhost:8080/company/{company_id}/user<br/>
 **Method:** POST<br/>
-**Description:** <br/>1. Only superadmin can add user in company, by giving role for user in json body.
+**Description:** <br/>1. Only superadmin can add user in company by giving company_id and user details including role in json body.
 
 <br/> 2. Once user is added in company, same time in role collection we are updating role of that user in company.<br/>
 
-<br/> 3. After that, updating the articlerole collection for each article in company with newly user role on each article(articlerole).
+<br/> 3.Here user **email** is unique, duplicate entry with same email is not allowed.<br/>
 
 **Payload**:
 ```
-{
-    "id" : <id>,
-    "firstname":<firstname>,
-    "lastname": <lastname>,
-    "email": <email>
-    "password" : <password>
-    "role" : <role for new user in comapany>
-}
+   {
+      "firstname":<firstname>,
+      "lastname": <lastname>,
+      "email": <email>
+      "password" : <password>
+      "role" : <role for new user in comapany>
+   }
 ```
-**Response:**
+**Response:** (for reference only)
 ```
-{
-    "message": "User with userid: 21  is added to company having id: 1 with role: admin"
-}
+   {
+      "message": "User with email: ram@gmail.com is added to company having id: 60ebc51456152e4ab5c6a5e2 with role: admin"
+   }
 ```
 
-#### GET all articles
-**API:** localhost:8080/all_articles<br/>
+#### 3. GET all articles
+**API:** localhost:8080/company/{company_id}/article<br/>
 **Method:** GET<br/>
-**Description:** <br/>To Get all articles for login company, only admin, member and superadmin can see all articles<br/>
-**Response:**
+**Description:** <br/>To Get all articles in provided company, only admin, member and superadmin can see all articles if they belongs to that company<br/>
+**Response:** (for reference only)
 ```
-[
-    {
-        "companyid": 1,
-        "articleid": 3,
-        "body": "Blockchain Learning"
-    },
-    {
-        "companyid": 1,
-        "articleid": 10,
-        "body": "Article by bhushan"
-    },
-    .
-    .
-    .
-    .
-]
+   [
+      {
+         "_id": "60ebc67056152e4ab5c6a5f7",
+         "company_id": "60ebc51456152e4ab5c6a5e2",
+         "body": "Welcome to GSLAB family!!!"
+      },
+      {
+         "_id": "60ebc67756152e4ab5c6a5fa",
+         "company_id": "60ebc51456152e4ab5c6a5e2",
+         "body": "Blockchain is future!"
+      }
+   ]
 ```
-#### Create article for company
-**API:** localhost:8080/article<br/>
+#### 4. GET single article 
+**API:** localhost:8080/company/{company_id}/article/{article_id}/article<br/>
+**Method:** GET<br/>
+**Description:** <br/>To Get single article by it's article_id in provided company, only admin, member and superadmin can read  article if they belongs to that company<br/>
+**Response:** (for reference only)
+```
+  {
+        "_id": "60ebc67056152e4ab5c6a5f7",
+        "company_id": "60ebc51456152e4ab5c6a5e2",
+        "body": "Hello Teams"
+  }
+```
+#### 5. Create article for company
+**API:** localhost:8080/company/{company_id}/article<br/>
 **Method:** POST<br/>
 **Description:**
-<br/>1. Only superadmin have access to this api, and it's checked by "Cashbin".<br/>
-<br/>2. After adding article in article collection, role for that particular article for all user is added by performing insert query in articlerole collection.<br/>
+<br/> Only superadmin can add article in company.<br/>
+
 **Payload**:
 ```
-{
-    "articleid":3,
-    "companyid":1,
-    "body": "Blockchain Learning"
-}
+   {
+    "body": "Welcome to Kpoint!!"
+   }
 ```
-**Response:**
+**Response:** (for reference only)
 ```
-{
-    "InsertedID": "60e55c22b705d4c5af021b74"
-}
+   {
+    "message": "Article with article id: 60ebc67756152e4ab5c6a5fa is added to company having id: 60ebc51456152e4ab5c6a5e2 "
+   }
 ```
 
-#### Delete article by articleid
-**API:** localhost:8080/article<br/>
-**Method:** DELETE<br/>
-**Params:**
-<br/>Key : articleid, Value: int <br/>
-**Description:**
-<br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".<br/>
-<br/>2. After accesing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to delete that article.<br/>
-<br/>3. After deleting the article all entries related to that articleid in articlerole collection will be deleted<br/>
-
-**Response:**
-```
-{
-    "message": "Article with id: 1 is successfully deleted!"
-}
-```
-#### Update article by articleid
-**API:** localhost:8080/article<br/>
+#### 6. Update article by articleid
+**API:** localhost:8080/company/{company_id}/article/{article_id}/article<br/>
 **Method:** PUT<br/>
 **Description:**
 <br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".<br/>
@@ -240,56 +246,65 @@
 
 **Payload**:
 ```
-{
-    "articleid":3,
-    "companyid":1,
-    "body": "Blockchain Learning"
-}
+   {
+     "body": "Updated article"
+   }
 ```
 **Response:**
 ```
-{
-    "message": "Article with id: 3 is successfully updated!"
-}
+  {
+    "message": "Article with id: 60ebc67756152e4ab5c6a5fa is successfully updated!"
+  }
 ```
-#### Change company role of user.
-**API:** localhost:8080/role<br/>
+
+#### 7. Delete article by articleid
+**API:** localhost:8080/article/{article_id}/article<br/>
+**Method:** DELETE<br/>
+**Description:**
+<br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".<br/>
+<br/>2. After accesing the api, if user having admin or superadmin access on particular article that is checked by mongo articlerole collection, then only user allow to delete that article.<br/>
+<br/>3. After deleting the article all entries related to that article_id in article role collection will be deleted<br/>
+
+**Response:** (for reference only)
+```
+  {
+    "message": "Article with id: ObjectID("60ebc67056152e4ab5c6a5f7") is successfully deleted!"
+  }
+```
+
+#### 8. Change company role of user.
+**API:** localhost:8080/company/{company_id}/user/{email}/role<br/>
 **Method:** PUT<br/>
 **Description:**
 <br/>1. Only superadmin have access to this api, and it's checked by "Cashbin".<br/>
-<br/>2. After changing role of user, corresponding role is updated for each article in articlerole collection.<br/>
+<br/>2. After changing role of user, if user have special role on particular article is reset by deleting related documents to that user in article role collection, now user have default role as company role on every article in company.<br/>
 **Payload**:
 ```
-{
-    "userid": 3,
-    "companyid": 1,
-    "role": "anonymous"
-}
+   {
+      "role": "admin"
+   }
 ```
 **Response:**
 ```
-{
-    "message": "Role for userid:3  is changed to: anonymous"
-}
+   {
+    "message": "Role for user with email : ram@gmail.com is is changed to: admin.
+   }
 ```
-#### Change role of user on particular article.
-**API:** localhost:8080/articlerole<br/>
+#### 9. Change role of user on particular article.
+**API:** localhost:8080/company/{company_id}/user/{email}/role<br/>
 **Method:** PUT<br/>
 **Description:**
-<br/> Only superadmin have access to this api, and it's checked by "Cashbin" and can change role of user on particular article that will upated in articlerole collction. <br/>
+<br/> Only superadmin have access to this api, and it's checked by "Cashbin" and can change special role of user on particular article that will upated in articlerole collction if entry already present or it will be added to article role collection. <br/>
 
 **Payload**:
 ```
-{
-    "articleid": 1,
-    "userid" : 4,
-    "companyid": 1,
-    "role" : "admin"
-}
+   {
+      "role" : "member"
+   }
 ```
-**Response:**
+**Response:** (for reference only)
 ```
-{
-    "message": "Role for userid:3 for articleid: 1 is changed to: admin"
-}
+   {
+      "message": "Role for user with email:shubham@gmail.com for articleid: 60ebc67056152e4ab5c6a5f7 is changed to: member"
+   }
 ```

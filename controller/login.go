@@ -66,7 +66,6 @@ func GenerateJWT(userEmail string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["authorized"] = true
-	// claims["userid"] = userID
 	claims["user_email"] = userEmail
 	claims["exp"] = time.Now().Add(time.Minute * 30)
 	tokenString, err := token.SignedString(SECRET_KEY)
