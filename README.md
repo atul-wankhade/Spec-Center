@@ -73,7 +73,7 @@
       Body      string             `json:"body" bson:"body"`
    }
    ```
-#### 5. **articlerole**:- We are using this when user have other role than its company role on particular article, so we have more control based on particular article.
+#### 5. **article_role**:- We are using this when user have other role than its company role on particular article, so we have more control based on particular article.
 #### Struct corresponding to database entity is as below.
    ```
    type ArticleRole struct {
