@@ -7,13 +7,11 @@ import (
 	//"time"
 
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/atul-wankhade/Spec-Center/db"
 	"github.com/atul-wankhade/Spec-Center/model"
@@ -43,7 +41,7 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 			})
 
 			if err != nil {
-				WriteError(http.StatusInternalServerError, "PARSE ERROR, Invalid token!", w, err)
+				WriteError(http.StatusInternalServerError, "PARSE ERROR, Invalid or expired token!", w, err)
 				return
 			}
 			if token.Valid {
@@ -53,21 +51,6 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		} else {
 			fmt.Fprintf(w, "Not Authorized")
 		}
-
-		var tm time.Time
-		switch iat := claims["exp"].(type) {
-		case float64:
-			tm = time.Unix(int64(iat), 0)
-		case json.Number:
-			v, _ := iat.Int64()
-			tm = time.Unix(v, 0)
-		}
-
-		fmt.Println(tm)
-
-		// if time.Unix(expiry,0).Before(time.Now()) {
-		// 	return
-		// }
 
 		userRole := model.UserRole{}
 		userEmail := claims["user_email"]

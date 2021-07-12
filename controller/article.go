@@ -239,61 +239,6 @@ func GetArticlesHandler(response http.ResponseWriter, request *http.Request, cla
 	json.NewEncoder(response).Encode(articles)
 }
 
-// to get role of user on particular article
-func getUserArticleRole(userID int, companyID int, articleID int) (string, error) {
-	var articleRole model.ArticleRole
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	client := db.InitializeDatabase()
-	defer client.Disconnect(context.Background())
-	collection := client.Database("SPEC-CENTER").Collection("articlerole")
-	filter := primitive.M{"articleid": articleID, "userid": int(userID), "companyid": int(companyID)}
-	err := collection.FindOne(ctx, filter).Decode(&articleRole)
-	if err != nil {
-		return "", err
-	}
-	return articleRole.Role, nil
-}
-
-// // Inserting articlerole for newly created article for all user present in company with there role
-// func insertRolesForNewArticle(articleID, companyID int) {
-// 	client := db.InitializeDatabase()
-// 	defer client.Disconnect(context.Background())
-// 	database := client.Database("SPEC-CENTER")
-
-// 	companyRoleCollection := database.Collection("role")
-// 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-// 	defer cancel()
-// 	filter := primitive.M{"companyid": companyID}
-
-// 	cursor, err := companyRoleCollection.Find(ctx, filter)
-// 	if err != nil {
-// 		log.Println(err)
-// 	}
-// 	defer cursor.Close(ctx)
-
-// 	articleRoleCollection := database.Collection("articlerole")
-// 	var articleRole model.ArticleRole
-// 	var userRole model.Roles
-
-// 	for cursor.Next(ctx) {
-// 		err := cursor.Decode(&userRole)
-// 		if err != nil {
-// 			log.Println(err)
-// 		}
-// 		articleRole.ArticleId = articleID
-// 		articleRole.CompanyId = companyID
-// 		articleRole.Role = userRole.Role
-// 		articleRole.UserId = userRole.UserId
-
-// 		_, err = articleRoleCollection.InsertOne(ctx, articleRole)
-// 		if err != nil {
-// 			log.Printf("Failed to add article role for article id : %d, user id : %d, error : %w", articleID, userRole.UserId, err)
-// 		}
-// 		log.Printf("Role on new article with article id : %d, for user id : %d , for company id : %d added successfully", articleID, userRole.UserId, companyID)
-// 	}
-// }
-
 func GetSingleArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)

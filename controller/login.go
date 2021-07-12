@@ -67,7 +67,7 @@ func GenerateJWT(userEmail string) (string, error) {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["authorized"] = true
 	claims["user_email"] = userEmail
-	claims["exp"] = time.Now().Add(time.Minute * 30)
+	claims["exp"] = time.Now().Add(time.Minute * 10).Unix()
 	tokenString, err := token.SignedString(SECRET_KEY)
 	if err != nil {
 		log.Println("Error in JWT token generation")
