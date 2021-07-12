@@ -25,10 +25,10 @@ func Start() {
 
 	// ARTICLE
 	router.Handle("/company/{company_id}/article", authorization.IsAuthorized(authEnforcer, GetArticlesHandler)).Methods("GET")
-	router.Handle("/company/{company_id}/article/{article_id}/articles", authorization.IsAuthorized(authEnforcer, GetSingleArticleHandler)).Methods("GET")
-	router.Handle("/company/{company_id}/article/{article_id}/articles", authorization.IsAuthorized(authEnforcer, DeleteArticleHandler)).Methods("DELETE")
-	router.Handle("/company/{company_id}/article/{article_id}/articles", authorization.IsAuthorized(authEnforcer, UpdateArticleHandler)).Methods("PUT")
-	router.Handle("/company/{company_id}/articles", authorization.IsAuthorized(authEnforcer, CreateArticleHandler)).Methods("POST")
+	router.Handle("/company/{company_id}/article/{article_id}/article", authorization.IsAuthorized(authEnforcer, GetSingleArticleHandler)).Methods("GET")
+	router.Handle("/company/{company_id}/article/{article_id}/article", authorization.IsAuthorized(authEnforcer, DeleteArticleHandler)).Methods("DELETE")
+	router.Handle("/company/{company_id}/article/{article_id}/article", authorization.IsAuthorized(authEnforcer, UpdateArticleHandler)).Methods("PUT")
+	router.Handle("/company/{company_id}/article", authorization.IsAuthorized(authEnforcer, CreateArticleHandler)).Methods("POST")
 
 	// //ROLE CHANGE :- only superadmin can change role of other user.
 	router.Handle("/company/{company_id}/user/{email}/article/{article_id}/role", authorization.IsAuthorized(authEnforcer, UpdateArticleRoleHandler)).Methods("PUT")

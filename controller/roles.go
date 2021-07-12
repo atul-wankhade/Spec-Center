@@ -73,7 +73,7 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		return
 	}
 	if result.ModifiedCount == 0 {
-		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST, User not present, please check mail", w, errors.New("BAD REQUEST, User not present"))
+		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST,either User not present or trying to update with same role", w, errors.New("BAD REQUEST, User not present"))
 		return
 	}
 
@@ -185,7 +185,7 @@ func updateUserArticleRoles(userEmail, companyID string) {
 	client := db.InitializeDatabase()
 	defer client.Disconnect(context.Background())
 	collection := client.Database(utils.Database).Collection(utils.ArticleRoleCollection)
-	filter := primitive.M{"email": userEmail, "companyid": companyID}
+	filter := primitive.M{"email": userEmail, "company_id": companyID}
 	_, err := collection.DeleteMany(ctx, filter)
 	if err != nil {
 		log.Println("Error while deleting user article roles", err)

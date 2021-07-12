@@ -107,7 +107,9 @@ func CheckRole(userRole string) bool {
 	return result.Err() == nil
 }
 
-var gslabID, kpointID, gslabUserID, kpointUserID primitive.ObjectID
+var gslabUserID, kpointUserID primitive.ObjectID
+var gslabIDstring = "60ebe75e02bcbdc4d7ae5b43"
+var kpointIDstring = "60ebe75e02bcbdc4d7ae5b44"
 
 // SuperadminEntry for entering  default superadmin and its role for each company in database.
 func SuperadminEntry() {
@@ -126,8 +128,14 @@ func SuperadminEntry() {
 	defer cancel()
 
 	var superadminGSLAB, superadminKpoint model.User
-	gslabID = primitive.NewObjectID()
-	kpointID = primitive.NewObjectID()
+	gslabID, err := primitive.ObjectIDFromHex(gslabIDstring)
+	if err != nil {
+		log.Println("unable to convert to object id")
+	}
+	kpointID, err := primitive.ObjectIDFromHex(kpointIDstring)
+	if err != nil {
+		log.Println("unable to convert to object id")
+	}
 	gslabUserID = primitive.NewObjectID()
 	kpointUserID = primitive.NewObjectID()
 
@@ -143,7 +151,7 @@ func SuperadminEntry() {
 	superadminKpoint.Email = "bhushan@gmail.com"
 	superadminKpoint.Password = utils.GetHash([]byte(passSuperadminKpoint))
 
-	_, err := userCollection.InsertMany(ctx, []interface{}{superadminGSLAB, superadminKpoint})
+	_, err = userCollection.InsertMany(ctx, []interface{}{superadminGSLAB, superadminKpoint})
 	if err != nil {
 		log.Println(err)
 	}
@@ -161,20 +169,20 @@ func SuperadminEntry() {
 		log.Println(err, "role not added for superadmin user in database")
 	}
 	log.Println("Superadmin entries inserted")
-}
 
-func CompanyEntry() {
 	var gslab, kpoint model.Company
 	gslab = model.Company{ID: gslabID, Name: "gslab"}
 	kpoint = model.Company{ID: kpointID, Name: "kpoint"}
-	client := InitializeDatabase()
-	defer client.Disconnect(context.Background())
 	companyCollection := client.Database(utils.Database).Collection(utils.CompanyCollection)
-	_, err := companyCollection.InsertMany(context.Background(), []interface{}{gslab, kpoint})
+	_, err = companyCollection.InsertMany(context.Background(), []interface{}{gslab, kpoint})
 	if err != nil {
 		log.Println(err)
 	}
 	log.Println("company entrys added")
+
+}
+
+func CompanyEntry() {
 }
 
 func InitializeDatabase() *mongo.Client {
