@@ -101,7 +101,7 @@
 
 ## APIs List
 
-#### 1. Login in Company
+### 1. Login in Company
 ```
    POST: localhost:8080/login
 ```
@@ -110,23 +110,23 @@
    POST: localhost:8080/company/{company_id}/user
 ```
 #### ARTICLE RELATED APIs
-##### 3. To get all article in company.
+#### 3. To get all article in company.
 ```
    GET: localhost:8080/company/{company_id}/article
 ```
-##### 4. To get single article in company.
+#### 4. To get single article in company.
 ```
    GET: localhost:8080/company/{company_id}/article/{article_id}/article
 ```
-##### 5. To create article for company.
+#### 5. To create article for company.
 ```
    POST: localhost:8080/company/{company_id}/article
 ```
-##### 6. To update article in company.
+#### 6. To update article in company.
 ```
    PUT: localhost:8080/company/{company_id}/article/{article_id}/article
 ```
-##### 7. To delete article in company.
+#### 7. To delete article in company.
 ```
    DELELTE: localhost:8080/article/{article_id}/article
 ```
@@ -145,7 +145,7 @@
 
 ### 1. User login
 
-**API:** localhost:8080/login<br/>
+**API:** **localhost:8080/login**<br/>
 **Method:** POST<br/>
 **Payload**:
 ```
@@ -162,7 +162,7 @@
    }
 ```
 ### 2. Add User
-**API:** localhost:8080/company/{company_id}/user<br/>
+**API:** **localhost:8080/company/{company_id}/user**<br/>
 **Method:** POST<br/>
 **Description:** <br/>1. Only superadmin can add user in company by giving company_id and user details including role in json body.
 
@@ -188,7 +188,7 @@
 ```
 
 #### 3. GET all articles
-**API:** localhost:8080/company/{company_id}/article<br/>
+**API:** **localhost:8080/company/{company_id}/article**<br/>
 **Method:** GET<br/>
 **Description:** <br/>To Get all articles in provided company, only admin, member and superadmin can see all articles if they belongs to that company<br/>
 **Response:** (for reference only)
@@ -207,7 +207,7 @@
    ]
 ```
 #### 4. GET single article 
-**API:** localhost:8080/company/{company_id}/article/{article_id}/article<br/>
+**API:** **localhost:8080/company/{company_id}/article/{article_id}/article**<br/>
 **Method:** GET<br/>
 **Description:** <br/>To Get single article by it's article_id in provided company, only admin, member and superadmin can read  article if they belongs to that company<br/>
 **Response:** (for reference only)
@@ -219,7 +219,7 @@
   }
 ```
 #### 5. Create article for company
-**API:** localhost:8080/company/{company_id}/article<br/>
+**API:** **localhost:8080/company/{company_id}/article**<br/>
 **Method:** POST<br/>
 **Description:**
 <br/> Only superadmin can add article in company.<br/>
@@ -238,7 +238,7 @@
 ```
 
 #### 6. Update article by articleid
-**API:** localhost:8080/company/{company_id}/article/{article_id}/article<br/>
+**API:** **localhost:8080/company/{company_id}/article/{article_id}/article**<br/>
 **Method:** PUT<br/>
 **Description:**
 <br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".<br/>
@@ -258,7 +258,7 @@
 ```
 
 #### 7. Delete article by articleid
-**API:** localhost:8080/article/{article_id}/article<br/>
+**API:** **localhost:8080/article/{article_id}/article**<br/>
 **Method:** DELETE<br/>
 **Description:**
 <br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".<br/>
@@ -273,7 +273,7 @@
 ```
 
 #### 8. Change company role of user.
-**API:** localhost:8080/company/{company_id}/user/{email}/role<br/>
+**API:** **localhost:8080/company/{company_id}/user/{email}/role**<br/>
 **Method:** PUT<br/>
 **Description:**
 <br/>1. Only superadmin have access to this api, and it's checked by "Cashbin".<br/>
@@ -290,8 +290,9 @@
     "message": "Role for user with email : ram@gmail.com is is changed to: admin.
    }
 ```
+
 #### 9. Change role of user on particular article.
-**API:** localhost:8080/company/{company_id}/user/{email}/role<br/>
+**API:** ***localhost:8080/company/{company_id}/user/{email}/role**<br/>
 **Method:** PUT<br/>
 **Description:**
 <br/> Only superadmin have access to this api, and it's checked by "Cashbin" and can change special role of user on particular article that will upated in articlerole collction if entry already present or it will be added to article role collection. <br/>
