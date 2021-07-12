@@ -55,21 +55,14 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 
 	//checking user role
 	//|| (userRole2 != "admin" && userRole2 != "member" && userRole2 != "anonymous")
-	if userRole2 == "superadmin" {
-		authorization.WriteError(http.StatusBadRequest, "Invalid user role provided", response, errors.New("wrong role"))
-		return
-	}
 
 	client := db.InitializeDatabase()
 	defer client.Disconnect(context.Background())
-	rolecollection := client.Database(utils.Database).Collection(utils.RolesCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	result := rolecollection.FindOne(ctx, primitive.M{"name": userRole2})
-	fmt.Println("@@@@@@@@@@", result)
-	if result.Err() != nil {
-		fmt.Println("@@@@@@@@@@", result.Err())
+	valid := db.CheckRole(userRole2)
+	if !valid {
 		authorization.WriteError(http.StatusBadRequest, "Invalid user role provided", response, errors.New("wrong role"))
 		return
 	}

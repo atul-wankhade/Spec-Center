@@ -56,35 +56,25 @@ func Indexing() {
 		log.Fatal(err)
 	}
 
-	// 	articleCollection := client.Database(utils.Database).Collection("article")
-	// 	_, err = articleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-	// 		Keys: bson.M{
-	// 			"articleid": 1,
-	// 		},
-	// 		Options: options.Index().SetUnique(true),
-	// 	})
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// roleCollection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
-	// _, err = roleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-	// 	Keys:    []bson.M{{"email", int32(1)}, {"company_id", int32(1)}},
-	// 	Options: options.Index().SetUnique(true),
-	// })
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// 	companyCollection := client.Database(utils.Database).Collection("company")
-	// 	_, err = companyCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-	// 		Keys: bson.M{
-	// 			"id": 1,
-	// 		},
-	// 		Options: options.Index().SetUnique(true),
-	// 	})
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	log.Println("Indexing done..!")
+	// Index for user role collection based on 2 fields , email , company_id
+	userRoleCollection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
+	_, err = userRoleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    primitive.D{{Key: "email", Value: 1}, {Key: "company_id", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Index for article role collection based on 2 fields , email , company_id
+	articleRoleCollection := client.Database(utils.Database).Collection(utils.ArticleRoleCollection)
+	_, err = articleRoleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
+		Keys:    primitive.D{{Key: "email", Value: 1}, {Key: "article_id", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func AddRoles() {

@@ -17,6 +17,6 @@ func main() {
 
 	db.SuperadminEntry()
 	db.CompanyEntry()
-	//	go worker.Worker()
+	//	go worker.Worker()s
 	controller.Start()
 }

@@ -165,10 +165,11 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 
 	articleRoleCollection := client.Database(utils.Database).Collection(utils.ArticleRoleCollection)
 	opts := options.Update().SetUpsert(true)
-	filter = primitive.M{"email": userEmail, "company_id": companyID, "articleid": articleID}
-	update := bson.D{{"$set", bson.D{{"role", articleRole.Role}}}}
+	filter2 := primitive.M{"email": userEmail, "company_id": companyID, "article_id": articleID}
+	//update := bson.D{{"$set", bson.D{{"role", articleRole.Role}}}}
+	update := primitive.M{"$set": primitive.M{"role": articleRole.Role}}
 
-	_, err = articleRoleCollection.UpdateOne(ctx, filter, update, opts)
+	_, err = articleRoleCollection.UpdateOne(ctx, filter2, update, opts)
 	if err != nil {
 		authorization.WriteError(http.StatusInternalServerError, "update error", w, err)
 		return

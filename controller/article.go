@@ -77,7 +77,7 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 		return
 	}
 
-	emailInterface, ok := claims["email"]
+	emailInterface, ok := claims["user_email"]
 	if !ok {
 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get email from claims"))
 		return
@@ -86,7 +86,7 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 
 	roleInterface, ok := claims["role"]
 	if !ok {
-		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get email from claims"))
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get role from claims"))
 		return
 	}
 	role := fmt.Sprintf("%v", roleInterface)
@@ -108,8 +108,12 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 	defer client.Disconnect(context.Background())
 	// deleting the article with given id
 	collection := client.Database(utils.Database).Collection(utils.ArticleCollection)
-	_, err = collection.DeleteOne(ctx, primitive.M{"_id": articleID})
+	result, err := collection.DeleteOne(ctx, primitive.M{"_id": articleID})
 	if err != nil {
+		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article"))
+		return
+	}
+	if result.DeletedCount == 0 {
 		authorization.WriteError(http.StatusInternalServerError, "Delete Error", response, errors.New("error while deleting article"))
 		return
 	}
@@ -122,7 +126,7 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 		return
 	}
 	response.WriteHeader(http.StatusOK)
-	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully deleted!", articleID) + `"}`))
+	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %s is successfully deleted!", articleID) + `"}`))
 }
 
 func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
@@ -134,8 +138,6 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 		authorization.WriteError(http.StatusBadRequest, "DECODE ERROR", response, err)
 		return
 	}
-
-	// articleID := primitive.ObjectIDFromHex()
 
 	params := mux.Vars(request)
 	companyID, ok := params["company_id"]
@@ -150,17 +152,23 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 		return
 	}
 
-	if article.CompanyID != companyID {
-		authorization.WriteError(http.StatusBadRequest, "Please provide correct company id", response, errors.New("wrong companyid"))
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
+	defer cancel()
+
+	client := db.InitializeDatabase()
+	defer client.Disconnect(context.Background())
+
+	articleCollection := client.Database(utils.Database).Collection(utils.ArticleCollection)
+
+	filter := bson.M{"company_id": companyID, "_id": articleID}
+	result := articleCollection.FindOne(ctx, filter)
+	if result.Err() != nil {
+		authorization.WriteError(http.StatusBadRequest, "wrong article_id, no article present with this id in database", response, result.Err())
 		return
 	}
 
-	if article.ID != articleID {
-		authorization.WriteError(http.StatusBadRequest, "Please provide correct article id", response, errors.New("wrong article id"))
-		return
-	}
-
-	emailInterface, ok := claims["email"]
+	emailInterface, ok := claims["user_email"]
 	if !ok {
 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get email from claims"))
 		return
@@ -180,24 +188,18 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 		return
 	}
 	// Updating the article with given id
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
-	defer cancel()
-
-	client := db.InitializeDatabase()
-	defer client.Disconnect(context.Background())
-
-	collection := client.Database(utils.Database).Collection(utils.ArticleCollection)
-	filter := primitive.M{"article_id": articleID, "company_id": companyID}
+	articlecollection := client.Database(utils.Database).Collection(utils.ArticleCollection)
+	filter2 := primitive.M{"_id": articleID, "company_id": companyID}
 	opts := options.Update().SetUpsert(false)
-	update := bson.D{{"$set", bson.D{{"body", article.Body}}}}
-	_, err = collection.UpdateOne(ctx, filter, update, opts)
+	update := primitive.M{"$set": primitive.M{"body": article.Body}}
+	_, err = articlecollection.UpdateOne(ctx, filter2, update, opts)
 	if err != nil {
 		authorization.WriteError(http.StatusBadRequest, "update error", response, err)
 		return
 	}
 	response.WriteHeader(http.StatusOK)
-	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %d is successfully updated!", articleID) + `"}`))
+	response.Write([]byte(`{"message":"` + fmt.Sprintf("Article with id: %s is successfully updated!", articleID) + `"}`))
 }
 
 func GetArticlesHandler(response http.ResponseWriter, request *http.Request, claims jwt.MapClaims) {
