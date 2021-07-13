@@ -191,7 +191,7 @@
 ```
 
 ### 3. To add role for user in  particular company
-**API:** **localhost:8080/company/{company_id}/user/{user_id}/user/role**<br/>
+**API:** **localhost:8080/company/{company_id}/user/{user_id}/role**<br/>
 **Method:** POST<br/>
 **Description:** <br/>1. Only superadmin have permission to access this api. They can add user from **user** collection into **user_role** collection,if that user not already present in **user_role** collection for same company.
  
