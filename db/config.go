@@ -56,10 +56,10 @@ func Indexing() {
 		log.Fatal(err)
 	}
 
-	// Index for user role collection based on 2 fields , email , company_id
+	// Index for user role collection based on 2 fields , user_id , company_id
 	userRoleCollection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
 	_, err = userRoleCollection.Indexes().CreateOne(context.Background(), mongo.IndexModel{
-		Keys:    primitive.D{{Key: "email", Value: 1}, {Key: "company_id", Value: 1}},
+		Keys:    primitive.D{{Key: "user_id", Value: 1}, {Key: "company_id", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	})
 	if err != nil {

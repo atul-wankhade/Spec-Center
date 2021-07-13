@@ -58,7 +58,7 @@
 #### Struct corresponding to database entity is as below.
    ```
    type UserRole struct {
-      UserEmail string `json:"email" bson:"email"`
+      UserID    string `json:"user_id" bson:"user_id"`
       CompanyId string `json:"company_id" bson:"company_id"`
       Role      string `json:"role" bson:"role"`
    }
@@ -76,8 +76,8 @@
 #### 5. **article_role**:- We are using this when user have other role than its company role on particular article, so we have more control based on particular article.
 #### Struct corresponding to database entity is as below.
    ```
-   type ArticleRole struct {
-      UserEmail string `json:"email" bson:"email"`
+    type ArticleRole struct {
+      UserID    string `json:"user_id" bson:"user_id"`
       CompanyId string `json:"company_id" bson:"company_id"`
       ArticleId string `json:"article_id" bson:"article_id"`
       Role      string `json:"role" bson:"role"`
@@ -96,8 +96,10 @@
 #### we are handling all below requirements through code itself.
 
 <br/>1. superadmin user details for each company should need to insert initially.
-<br/>2. Also, same user with superadmin role need to be added in role collection.
-<br/>2. Also, all companies details need to be insert in company collection.
+<br/>2. Also, same user with superadmin role need to be added in *user_role** collection.
+<br/>3. Also, all companies details need to be insert in **company** collection.
+<br/>4. Also, predefind role need to add in **role** collection.
+
 
 ## APIs List
 
@@ -105,38 +107,42 @@
 ```
    POST: localhost:8080/login
 ```
-#### 2. To add User
+#### 2. To add user in user collectiob
 ```
-   POST: localhost:8080/company/{company_id}/user
+   POST: localhost:8080/user
+```
+#### 3. To add role for user in particular company
+```
+   POST: localhost:8080/company/{company_id}/user/{user_id}/role
 ```
 #### ARTICLE RELATED APIs
-#### 3. To get all article in company.
+#### 4. To get all article in company.
 ```
    GET: localhost:8080/company/{company_id}/article
 ```
-#### 4. To get single article in company.
+#### 5. To get single article in company.
 ```
    GET: localhost:8080/company/{company_id}/article/{article_id}
 ```
-#### 5. To create article for company.
+#### 6. To create article for company.
 ```
    POST: localhost:8080/company/{company_id}/article
 ```
-#### 6. To update article in company.
+#### 7. To update article in company.
 ```
    PUT: localhost:8080/company/{company_id}/article/{article_id}
 ```
-#### 7. To delete article in company.
+#### 8. To delete article in company.
 ```
    DELELTE: localhost:8080/article/{article_id}
 ```
 ### ROLE CHANGE APIs
 
-#### 8. To change role of user in company :- Only superadmin can change role of other user.<br/>
+#### 9. To change role of user in company :- Only superadmin can change role of other user.<br/>
 ```
    PUT: localhost:8080/company/{company_id}/user/{email}/role
 ```
-#### 9. To change role of user on particular article :- Only superadmin can change role of other user on particular article.<br/>
+#### 10. To change role of user on particular article :- Only superadmin can change role of other user on particular article.<br/>
 ```
    PUT: localhost:8080/company/{company_id}/user/{email}/article/{article_id}/role
 ```
@@ -162,13 +168,11 @@
    }
 ```
 ### 2. Add User
-**API:** **localhost:8080/company/{company_id}/user**<br/>
+**API:** **localhost:8080/user**<br/>
 **Method:** POST<br/>
-**Description:** <br/>1. Only superadmin can add user in company by giving company_id and user details including role in json body.
+**Description:** <br/>1. Only superadmin of all company can add user in **user** collection, then that user can be add in multiple company with specific api.
 
-<br/> 2. Once user is added in company, same time in **role collection** we are updating role of that user in company.<br/>
-
-<br/> 3.Here user **email** is unique, duplicate entry with same email is not allowed.<br/>
+<br/> 2.Here user **email** is unique, duplicate entry with same email is not allowed.<br/>
 
 **Payload**:
 ```
@@ -177,17 +181,33 @@
       "last_name": <lastname>,
       "email": <email>
       "password" : <password>
-      "role" : <role for new user in comapany>
    }
 ```
 **Response:** (for reference only)
 ```
    {
-      "message": "User with email: ram@gmail.com is added to company having id: 60ebc51456152e4ab5c6a5e2 with role: admin"
+      "message": "User with email: shubham@gmail.com is added to database  with id :- 60ed8b906f708a84e5dac774"
    }
 ```
 
-#### 3. GET all articles
+### 3. To add role for user in  particular company
+**API:** **localhost:8080/company/{company_id}/user/{user_id}/user/role**<br/>
+**Method:** POST<br/>
+**Description:** <br/>1. Only superadmin have permission to access this api. They can add user from **user** collection into **user_role** collection,if that user not already present in **user_role** collection for same company.
+ 
+**Payload**:
+```
+   {
+       "role": "member"
+   }
+```
+**Response:** (for reference only)
+```
+   {
+      "message": "User with id :60ed8b906f708a84e5dac774 is added to comapny with company_id: 60ebe75e02bcbdc4d7ae5b44 with role:member"
+   }
+```
+#### 4. GET all articles
 **API:** **localhost:8080/company/{company_id}/article**<br/>
 **Method:** GET<br/>
 **Description:** <br/>To Get all articles in provided company, only admin, member and superadmin can see all articles.<br/>
@@ -206,7 +226,7 @@
       }
    ]
 ```
-#### 4. GET single article 
+#### 5. GET single article 
 **API:** **localhost:8080/company/{company_id}/article/{article_id}**<br/>
 **Method:** GET<br/>
 **Description:** <br/>To Get single article by it's **article_id** in provided company, only admin, member and superadmin can read  article.<br/>
@@ -218,7 +238,7 @@
         "body": "Hello Teams"
   }
 ```
-#### 5. Create article for company
+#### 6. Create article for company
 **API:** **localhost:8080/company/{company_id}/article**<br/>
 **Method:** POST<br/>
 **Description:**
@@ -233,11 +253,11 @@
 **Response:** (for reference only)
 ```
    {
-    "message": "Article with article id: 60ebc67756152e4ab5c6a5fa is added to company having id: 60ebc51456152e4ab5c6a5e2 "
+       "message": "Article with article id: 60ed8cdc6f708a84e5dac790 is added to company having id: 60ebe75e02bcbdc4d7ae5b44 "
    }
 ```
 
-#### 6. Update article by articleid
+#### 7. Update article by articleid
 **API:** **localhost:8080/company/{company_id}/article/{article_id}**<br/>
 **Method:** PUT<br/>
 **Description:**
@@ -257,7 +277,7 @@
   }
 ```
 
-#### 7. Delete article by articleid
+#### 8. Delete article by articleid
 **API:** **localhost:8080/article/{article_id}**<br/>
 **Method:** DELETE<br/>
 **Description:**
@@ -267,17 +287,17 @@
 
 **Response:** (for reference only)
 ```
-  {
-    "message": "Article with id: ObjectID("60ebc67056152e4ab5c6a5f7") is successfully deleted!"
-  }
+   {
+      "message": "Article with id: ObjectID("60ed8ccb6f708a84e5dac78d") is successfully deleted!"
+   }
 ```
 
-#### 8. Change company role of user.
+#### 9. Change company role of user.
 **API:** **localhost:8080/company/{company_id}/user/{email}/role**<br/>
 **Method:** PUT<br/>
 **Description:**
 <br/>1. Only superadmin have access to this api, and it's checked by **Casbin**.<br/>
-<br/>2. After changing role of user, if user have special access on particular article is reset by deleting related documents to that user in **article_role** collection, now user have default role as company role on every article in company.<br/>
+<br/>2. After changing role of user, if user have same access on particular article  then in article_role collecion entry with same role will be deleted.Now only entry other than than company role is present in **article_role collection**.<br/>
 **Payload**:
 ```
    {
@@ -287,11 +307,11 @@
 **Response:**
 ```
    {
-    "message": "Role for user with email : ram@gmail.com is is changed to: admin.
+      "message": "Role for user with id :60ed8b906f708a84e5dac774  is changed to: admin"
    }
 ```
 
-#### 9. Change role of user on particular article.
+#### 10. Change role of user on particular article.
 **API:** ***localhost:8080/company/{company_id}/user/{email}/role**<br/>
 **Method:** PUT<br/>
 **Description:**

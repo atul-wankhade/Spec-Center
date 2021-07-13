@@ -46,6 +46,7 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 	role.UserID = userID
 
 	superadminID := fmt.Sprintf("%v", claims["user_id"])
+	log.Println("superadminID---->", superadminID)
 
 	if superadminID == userID {
 		authorization.WriteError(http.StatusBadRequest, "Cannot change own role", w, errors.New("cannot update own role"))
@@ -58,29 +59,54 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		return
 	}
 
+	userObjectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		authorization.WriteError(http.StatusBadRequest, "Invalid user_id!", w, errors.New("wrong user_id"))
+		return
+	}
+
+	client := db.InitializeDatabase()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client := db.InitializeDatabase()
 	defer client.Disconnect(ctx)
+
+	userExists := UserExists(userObjectID)
+	if !userExists {
+		authorization.WriteError(http.StatusBadRequest, "User does not exists in database!", w, errors.New("wrong user_id"))
+		return
+	}
+
 	collection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
 	filter := primitive.M{"user_id": role.UserID, "company_id": role.CompanyId}
-	opts := options.Update().SetUpsert(false)
-	update := bson.D{{"$set", bson.D{{"role", role.Role}}}}
+	var opts *options.UpdateOptions
+	if r.Method == "PUT" {
+		opts = options.Update().SetUpsert(false)
+		update := bson.D{{"$set", bson.D{{"role", role.Role}}}}
+		result, err := collection.UpdateOne(ctx, filter, update, opts)
 
-	result, err := collection.UpdateOne(ctx, filter, update, opts)
-	if err != nil {
-		authorization.WriteError(http.StatusInternalServerError, "update error", w, err)
-		return
+		if err != nil {
+			authorization.WriteError(http.StatusInternalServerError, "update error", w, err)
+			return
+		}
+		if result.ModifiedCount == 0 && r.Method == "PUT" {
+			authorization.WriteError(http.StatusBadRequest, "Trying to update with same role.", w, errors.New("BAD REQUEST, User not present"))
+			return
+		}
+
+		go updateUserArticleRoles(role.UserID, role.CompanyId, role.Role)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message":"` + fmt.Sprintf("Role for user with id :%s  is changed to: %s", role.UserID, role.Role) + `"}`))
+	} else {
+		opts = options.Update().SetUpsert(true)
+		_, err = collection.InsertOne(ctx, role)
+		if err != nil {
+			authorization.WriteError(http.StatusConflict, "Duplicate User Entry!", w, errors.New("user already in company"))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"message":"` + fmt.Sprintf("User with id :%s is added to comapny with company_id: %s with role:%s", role.UserID, companyID, role.Role) + `"}`))
 	}
-	if result.ModifiedCount == 0 {
-		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST,either User not present or trying to update with same role", w, errors.New("BAD REQUEST, User not present"))
-		return
-	}
-
-	go updateUserArticleRoles(role.UserID, role.CompanyId, role.Role)
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"` + fmt.Sprintf("Role for user with id :%s  is changed to: %s", role.UserID, role.Role) + `"}`))
 }
 
 func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
@@ -202,4 +228,18 @@ func CheckRole(userRole string) bool {
 
 	result := rolecollection.FindOne(ctx, primitive.M{"name": userRole})
 	return result.Err() == nil
+}
+
+func UserExists(userID primitive.ObjectID) bool {
+	client := db.InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	userCollection := client.Database(utils.Database).Collection(utils.UserCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	result := userCollection.FindOne(ctx, primitive.M{"_id": userID})
+	if result.Err() != nil {
+		return false
+	}
+	return true
 }

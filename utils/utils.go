@@ -10,8 +10,8 @@ import (
 
 const (
 	// Collection names
-	// MongoUrl = "mongodb://mongoservice:27017"
-	MongoUrl               = "mongodb://localhost:27017"
+	MongoUrl = "mongodb://mongoservice:27017"
+	//MongoUrl               = "mongodb://localhost:27017"
 	Database               = "SPEC-CENTER"
 	CompanyRolesCollection = "user_roles"
 	UserCollection         = "user"

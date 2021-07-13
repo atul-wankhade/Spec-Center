@@ -46,10 +46,17 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		}
 
 		userRole := model.UserRole{}
-		userEmail := claims["user_email"]
 		companyID := vars["company_id"]
+		userID := fmt.Sprintf("%v", claims["user_id"])
+		superadmin := claims["superadmin"].(bool)
+
+		if r.URL.Path == "/user" && superadmin {
+			endpoint(w, r, claims)
+			return
+		}
+
 		client := db.InitializeDatabase()
-		err := client.Database(utils.Database).Collection(utils.CompanyRolesCollection).FindOne(context.Background(), primitive.M{"email": userEmail, "company_id": companyID}).Decode(&userRole)
+		err := client.Database(utils.Database).Collection(utils.CompanyRolesCollection).FindOne(context.Background(), primitive.M{"user_id": userID, "company_id": companyID}).Decode(&userRole)
 		if err != nil {
 			WriteError(http.StatusUnauthorized, "Invalid companyID", w, err)
 			return
@@ -81,9 +88,7 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 
 		fmt.Println("FINISHED")
 		endpoint(w, r, claims)
-
 	})
-
 }
 
 func WriteError(status int, message string, w http.ResponseWriter, err error) {

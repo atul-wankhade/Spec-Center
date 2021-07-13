@@ -50,7 +50,16 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 		response.Write([]byte(`{"response":"Wrong Password!"}`))
 		return
 	}
-	jwtToken, err := GenerateJWT(userEmail)
+	var superAdminTag bool
+
+	userRoleCollection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
+	userIsSuperadmin := userRoleCollection.FindOne(ctx, bson.M{"user_id": dbUser.ID.Hex(), "role": "superadmin"})
+	if userIsSuperadmin.Err() != nil {
+		superAdminTag = false
+	}
+	superAdminTag = true
+
+	jwtToken, err := GenerateJWT(userEmail, dbUser.ID.Hex(), superAdminTag)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{"message":"` + err.Error() + `"}`))
@@ -59,11 +68,13 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 	response.Write([]byte(`{"token":"` + jwtToken + `"}`))
 }
 
-func GenerateJWT(userEmail string) (string, error) {
+func GenerateJWT(userEmail string, userID string, superAdminTag bool) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["authorized"] = true
 	claims["user_email"] = userEmail
+	claims["user_id"] = userID
+	claims["superadmin"] = superAdminTag
 	claims["exp"] = time.Now().Add(time.Minute * 10).Unix()
 	tokenString, err := token.SignedString(SECRET_KEY)
 	if err != nil {
