@@ -2,6 +2,7 @@ package utils
 
 import (
 	// godot package to load/read the .env file and
+
 	"log"
 	"os"
 
@@ -45,6 +46,8 @@ func GetEnvVariable(key string) string {
 	}
 	return os.Getenv(key)
 }
+
+
 
 // entity := model.NewEntity{Name: "article", ID: article.ArticleID, CompanyID: article.ComapanyID}
 // _, err = client.Database("SPEC-CENTER").Collection("newentity").InsertOne(ctx, entity)

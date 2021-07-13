@@ -173,8 +173,8 @@
 **Payload**:
 ```
    {
-      "firstname":<firstname>,
-      "lastname": <lastname>,
+      "first_name":<firstname>,
+      "last_name": <lastname>,
       "email": <email>
       "password" : <password>
       "role" : <role for new user in comapany>

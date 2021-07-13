@@ -52,7 +52,7 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		return
 	}
 
-	valid := db.CheckRole(role.Role)
+	valid := CheckRole(role.Role)
 	if !valid {
 		authorization.WriteError(http.StatusBadRequest, "Invalid user role provided", w, errors.New("wrong role"))
 		return
@@ -124,7 +124,7 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		return
 	}
 
-	valid := db.CheckRole(articleRole.Role)
+	valid := CheckRole(articleRole.Role)
 	if !valid {
 		authorization.WriteError(http.StatusBadRequest, "Invalid user role provided", w, errors.New("wrong role"))
 		return
@@ -166,7 +166,6 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 	articleRoleCollection := client.Database(utils.Database).Collection(utils.ArticleRoleCollection)
 	opts := options.Update().SetUpsert(true)
 	filter2 := primitive.M{"email": userEmail, "company_id": companyID, "article_id": articleID}
-	//update := bson.D{{"$set", bson.D{{"role", articleRole.Role}}}}
 	update := primitive.M{"$set": primitive.M{"role": articleRole.Role}}
 
 	_, err = articleRoleCollection.UpdateOne(ctx, filter2, update, opts)
@@ -190,4 +189,18 @@ func updateUserArticleRoles(userEmail, companyID string) {
 	if err != nil {
 		log.Println("Error while deleting user article roles", err)
 	}
+}
+
+func CheckRole(userRole string) bool {
+	if userRole == "superadmin" {
+		return false
+	}
+	client := db.InitializeDatabase()
+	defer client.Disconnect(context.Background())
+	rolecollection := client.Database(utils.Database).Collection(utils.RolesCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	result := rolecollection.FindOne(ctx, primitive.M{"name": userRole})
+	return result.Err() == nil
 }

@@ -31,6 +31,11 @@ func CreateArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.Map
 		return
 	}
 
+	if article.Body == "" {
+		authorization.WriteError(http.StatusBadRequest, "Invalid payload or nil body parameter", w, errors.New("invalid request body"))
+		return
+	}
+
 	params := mux.Vars(r)
 	companyID, ok := params["company_id"]
 	if !ok {
@@ -136,6 +141,11 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 	err := json.NewDecoder(request.Body).Decode(&article)
 	if err != nil {
 		authorization.WriteError(http.StatusBadRequest, "DECODE ERROR", response, err)
+		return
+	}
+
+	if article.Body == "" {
+		authorization.WriteError(http.StatusBadRequest, "Invalid payload or nil body parameter", response, errors.New("invalid request body"))
 		return
 	}
 

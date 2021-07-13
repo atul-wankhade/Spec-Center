@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -25,7 +24,7 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 	response.Header().Set("Content-Type", "application/json")
 	var user model.User
 	var userRole model.UserRole
-	keyVal := make(map[string]interface{})
+	// keyVal := make(map[string]interface{})
 	params := mux.Vars(request)
 	companyID, ok := params["company_id"]
 	if !ok {
@@ -33,25 +32,52 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 		return
 	}
 
-	body, err := ioutil.ReadAll(request.Body)
-	if err != nil {
-		panic(err.Error())
+	type tempUser struct {
+		FirstName string `json:"first_name" bson:"first_name"`
+		LastName  string `json:"last_name" bson:"last_name"`
+		Email     string `json:"email" bson:"email"`
+		Password  string `json:"password" bson:"password"`
+		Role      string `json: "role"`
 	}
-	err = json.Unmarshal(body, &keyVal)
+
+	var userHolder tempUser
+
+	err := json.NewDecoder(request.Body).Decode(&userHolder)
 	if err != nil {
-		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST", response, err)
+		authorization.WriteError(http.StatusBadRequest, "BAD REQUEST BODY", response, err)
 		return
 	}
 
-	userRole2 := fmt.Sprintf("%v", keyVal["role"])
+	// body, err := ioutil.ReadAll(request.Body)
+	// if err != nil || request.Body == nil {
+	// 	panic(err.Error())
+	// }
+	// err = json.Unmarshal(body, &keyVal)
+	// if err != nil {
+	// 	authorization.WriteError(http.StatusBadRequest, "BAD REQUEST", response, err)
+	// 	return
+	// }
+
+	// userRole2 := fmt.Sprintf("%v", keyVal["role"])
 
 	log.Println("&&&&&&&&&& company ID :", companyID)
-	log.Println("&&&&&&&&&& company ID :", userRole2)
+	// log.Println("&&&&&&&&&& company ID :", userRole2)
 	user.ID = primitive.NewObjectID()
-	user.FirstName = fmt.Sprintf("%v", keyVal["firstname"])
-	user.LastName = fmt.Sprintf("%v", keyVal["lastname"])
-	user.Password = fmt.Sprintf("%v", keyVal["password"])
-	user.Email = fmt.Sprintf("%v", keyVal["email"])
+	user.FirstName = userHolder.FirstName
+	user.LastName = userHolder.LastName
+	user.Password = userHolder.Password
+	user.Email = userHolder.Email
+	// user.FirstName = fmt.Sprintf("%v", keyVal["firstname"])
+	// user.LastName = fmt.Sprintf("%v", keyVal["lastname"])
+	// user.Password = fmt.Sprintf("%v", keyVal["password"])
+	// user.Email = fmt.Sprintf("%v", keyVal["email"])
+
+	log.Println("&&&&&&&&&&&&&&&&&&&&", user, userHolder)
+
+	if userHolder.FirstName == "" || userHolder.LastName == "" || userHolder.Password == "" || userHolder.Email == "" {
+		authorization.WriteError(http.StatusBadRequest, "Invalid payload or nil body parameter", response, errors.New("invalid request body"))
+		return
+	}
 
 	//checking user role
 	//|| (userRole2 != "admin" && userRole2 != "member" && userRole2 != "anonymous")
@@ -61,7 +87,7 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	valid := db.CheckRole(userRole2)
+	valid := CheckRole(userHolder.Role)
 	if !valid {
 		authorization.WriteError(http.StatusBadRequest, "Invalid user role provided", response, errors.New("wrong role"))
 		return
@@ -79,7 +105,7 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 	// user role insertion in roles collection
 	userRole.UserEmail = user.Email
 	userRole.CompanyId = companyID
-	userRole.Role = userRole2
+	userRole.Role = userHolder.Role
 
 	collection = client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
 	_, err = collection.InsertOne(ctx, userRole)
@@ -90,7 +116,7 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 	}
 
 	response.WriteHeader(http.StatusAccepted)
-	response.Write([]byte(`{"message":"` + fmt.Sprintf("User with email: %s is added to company having id: %s with role: %s", user.Email, companyID, userRole2) + `"}`))
+	response.Write([]byte(`{"message":"` + fmt.Sprintf("User with email: %s is added to company having id: %s with role: %s", user.Email, companyID, userHolder.Role) + `"}`))
 }
 
 // // Inserting articlerole for newly created user for all article present in company
