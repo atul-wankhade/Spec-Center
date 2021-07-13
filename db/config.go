@@ -144,13 +144,13 @@ func SuperadminEntry() {
 		log.Println(err)
 	}
 	var roleForGSLAB, roleForKpoint model.UserRole
-	roleForKpoint.UserEmail = "bhushan@gmail.com"
+	roleForKpoint.UserID = kpointUserID.Hex()
 	roleForKpoint.CompanyId = kpointID.Hex()
 	roleForKpoint.Role = "superadmin"
 
 	roleForGSLAB.CompanyId = gslabID.Hex()
 	roleForGSLAB.Role = "superadmin"
-	roleForGSLAB.UserEmail = "atul@gmail.com"
+	roleForGSLAB.UserID = gslabUserID.Hex()
 	_, err = roleCollection.InsertMany(ctx, []interface{}{roleForGSLAB, roleForKpoint})
 
 	if err != nil {

@@ -29,9 +29,9 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get companyid from parameters"))
 		return
 	}
-	userEmail, ok := params["email"]
+	userID, ok := params["user_id"]
 	if !ok {
-		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get companyid from parameters"))
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get user id from parameters"))
 		return
 	}
 
@@ -43,11 +43,11 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 	}
 
 	role.CompanyId = companyID
-	role.UserEmail = userEmail
+	role.UserID = userID
 
-	superadminEmail := fmt.Sprintf("%v", claims["user_email"])
+	superadminID := fmt.Sprintf("%v", claims["user_id"])
 
-	if superadminEmail == userEmail {
+	if superadminID == userID {
 		authorization.WriteError(http.StatusBadRequest, "Cannot change own role", w, errors.New("cannot update own role"))
 		return
 	}
@@ -63,7 +63,7 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 	client := db.InitializeDatabase()
 	defer client.Disconnect(ctx)
 	collection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
-	filter := primitive.M{"email": role.UserEmail, "company_id": role.CompanyId}
+	filter := primitive.M{"user_id": role.UserID, "company_id": role.CompanyId}
 	opts := options.Update().SetUpsert(false)
 	update := bson.D{{"$set", bson.D{{"role", role.Role}}}}
 
@@ -77,10 +77,10 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		return
 	}
 
-	go updateUserArticleRoles(role.UserEmail, role.CompanyId, role.Role)
+	go updateUserArticleRoles(role.UserID, role.CompanyId, role.Role)
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"` + fmt.Sprintf("Role for user with email :%s  is changed to: %s", role.UserEmail, role.Role) + `"}`))
+	w.Write([]byte(`{"message":"` + fmt.Sprintf("Role for user with id :%s  is changed to: %s", role.UserID, role.Role) + `"}`))
 }
 
 func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt.MapClaims) {
@@ -93,9 +93,9 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get companyid from parameters"))
 		return
 	}
-	userEmail, ok := params["email"]
+	userID, ok := params["user_id"]
 	if !ok {
-		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get user email from parameters"))
+		authorization.WriteError(http.StatusInternalServerError, "Decode Error", w, errors.New("unable to get user id from parameters"))
 		return
 	}
 
@@ -115,11 +115,11 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 
 	articleRole.ArticleId = articleID
 	articleRole.CompanyId = companyID
-	articleRole.UserEmail = userEmail
+	articleRole.UserID = userID
 
-	superadminEmail := fmt.Sprintf("%v", claims["user_email"])
+	superadminID := fmt.Sprintf("%v", claims["user_id"])
 
-	if superadminEmail == userEmail {
+	if superadminID == userID {
 		authorization.WriteError(http.StatusBadRequest, "Cannot change role on article for superadmin", w, errors.New("cannot update article role for superadmin"))
 		return
 	}
@@ -137,9 +137,9 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 	roleCollection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = roleCollection.FindOne(ctx, primitive.M{"email": userEmail, "company_id": companyID}).Decode(&role)
+	err = roleCollection.FindOne(ctx, primitive.M{"user_id": userID, "company_id": companyID}).Decode(&role)
 	if err != nil {
-		authorization.WriteError(http.StatusBadRequest, "Please provide correct user email!, user not present", w, err)
+		authorization.WriteError(http.StatusBadRequest, "Please provide correct user id..!, user not present", w, err)
 		return
 	}
 	if role.Role == "anonymous" {
@@ -164,7 +164,7 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 
 	articleRoleCollection := client.Database(utils.Database).Collection(utils.ArticleRoleCollection)
 	opts := options.Update().SetUpsert(true)
-	filter2 := primitive.M{"email": userEmail, "company_id": companyID, "article_id": articleID}
+	filter2 := primitive.M{"user_id": userID, "company_id": companyID, "article_id": articleID}
 	update := primitive.M{"$set": primitive.M{"role": articleRole.Role}}
 
 	_, err = articleRoleCollection.UpdateOne(ctx, filter2, update, opts)
@@ -173,17 +173,17 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message":"` + fmt.Sprintf("Role for user with email:%s for articleid: %s is changed to: %s", userEmail, articleRole.ArticleId, articleRole.Role) + `"}`))
+	w.Write([]byte(`{"message":"` + fmt.Sprintf("Role for user with id:%s for articleid: %s is changed to: %s", userID, articleRole.ArticleId, articleRole.Role) + `"}`))
 }
 
 // for deleting user role on special article when company role for user is changed, so we can used default role on all article
-func updateUserArticleRoles(userEmail, companyID string, updatedRole string) {
+func updateUserArticleRoles(userID, companyID string, updatedRole string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client := db.InitializeDatabase()
 	defer client.Disconnect(context.Background())
 	collection := client.Database(utils.Database).Collection(utils.ArticleRoleCollection)
-	filter := primitive.M{"email": userEmail, "company_id": companyID, "role": updatedRole}
+	filter := primitive.M{"user_id": userID, "company_id": companyID, "role": updatedRole}
 	_, err := collection.DeleteMany(ctx, filter)
 	if err != nil {
 		log.Println("Error while deleting user article roles", err)

@@ -78,7 +78,7 @@ func AddUser(response http.ResponseWriter, request *http.Request, claims jwt.Map
 		return
 	}
 	// user role insertion in roles collection
-	userRole.UserEmail = user.Email
+	userRole.UserID = user.ID.Hex()
 	userRole.CompanyId = companyID
 	userRole.Role = userHolder.Role
 
