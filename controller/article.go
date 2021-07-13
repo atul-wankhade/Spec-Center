@@ -31,6 +31,7 @@ func CreateArticleHandler(w http.ResponseWriter, r *http.Request, claims jwt.Map
 		return
 	}
 
+	// validation check on body field
 	if article.Body == "" {
 		authorization.WriteError(http.StatusBadRequest, "Invalid payload or nil body parameter", w, errors.New("invalid request body"))
 		return
@@ -98,10 +99,6 @@ func DeleteArticleHandler(response http.ResponseWriter, request *http.Request, c
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-
-	//first finding out role on particular article from articlerole collection, using getUserArticleRole function
-
-	fmt.Println(email, companyID, articleID)
 
 	authorized := authorization.IsAuthorizedForArticle(companyID, email, role, request.Method, articleID)
 	if !authorized {
@@ -197,8 +194,8 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", response, errors.New("unauthorized"))
 		return
 	}
-	// Updating the article with given id
 
+	// Updating the article with given id
 	articlecollection := client.Database(utils.Database).Collection(utils.ArticleCollection)
 	filter2 := primitive.M{"_id": articleID, "company_id": companyID}
 	opts := options.Update().SetUpsert(false)

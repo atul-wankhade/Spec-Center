@@ -24,7 +24,6 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 
 	var user model.User
 	var dbUser model.User
-	// var role model.Roles
 
 	json.NewDecoder(request.Body).Decode(&user)
 
@@ -41,8 +40,6 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	// userRole := role.Role
-	// dbUserId := dbUser.ID
 	userEmail := dbUser.Email
 	userPass := []byte(user.Password)
 	dbPass := []byte(dbUser.Password)

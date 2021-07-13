@@ -1,8 +1,6 @@
 package utils
 
 import (
-	// godot package to load/read the .env file and
-
 	"log"
 	"os"
 
@@ -11,7 +9,7 @@ import (
 )
 
 const (
-	//Collection names
+	// Collection names
 	// MongoUrl = "mongodb://mongoservice:27017"
 	MongoUrl               = "mongodb://localhost:27017"
 	Database               = "SPEC-CENTER"
@@ -23,11 +21,12 @@ const (
 	NewEntityCollection    = "new_entity"
 	CompanyCollection      = "company"
 
-	//casbin urls
+	// casbin urls
 	ArticleURLMatcher = "/article"
 	RoleURLMatcher    = "/role"
 )
 
+// for encryption of the user password
 func GetHash(pwd []byte) string {
 	hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.MinCost)
 	if err != nil {
@@ -46,8 +45,6 @@ func GetEnvVariable(key string) string {
 	}
 	return os.Getenv(key)
 }
-
-
 
 // entity := model.NewEntity{Name: "article", ID: article.ArticleID, CompanyID: article.ComapanyID}
 // _, err = client.Database("SPEC-CENTER").Collection("newentity").InsertOne(ctx, entity)

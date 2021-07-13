@@ -77,6 +77,7 @@ func Indexing() {
 	}
 }
 
+// adding valid roles for company as time of booting the app
 func AddRoles() {
 	superadminRole := model.Role{ID: primitive.NewObjectID(), Name: "superadmin"}
 	adminRole := model.Role{ID: primitive.NewObjectID(), Name: "admin"}

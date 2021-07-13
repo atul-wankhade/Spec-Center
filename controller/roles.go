@@ -155,7 +155,6 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		return
 	}
 
-	fmt.Println("@@@@@@@@@@@@@", articleID, articleObjectID, companyID)
 	filter := bson.M{"company_id": companyID, "_id": articleObjectID}
 	result := articleCollection.FindOne(ctx, filter)
 	if result.Err() != nil {

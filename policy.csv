@@ -1,6 +1,5 @@
 p, superadmin, /*, *
 
-
 p, admin, /article, GET
 p, admin, /article, DELETE
 p, admin, /article, PUT

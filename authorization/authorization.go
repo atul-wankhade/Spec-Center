@@ -1,11 +1,6 @@
 package authorization
 
 import (
-	//"Spec-Center/model"
-	//"context"
-	//"go.mongodb.org/mongo-driver/bson/primitive"
-	//"time"
-
 	"context"
 	"errors"
 	"fmt"
@@ -18,8 +13,6 @@ import (
 	"github.com/atul-wankhade/Spec-Center/utils"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	//"strings"
 
 	"github.com/casbin/casbin"
 	"github.com/dgrijalva/jwt-go"
@@ -55,7 +48,6 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		userRole := model.UserRole{}
 		userEmail := claims["user_email"]
 		companyID := vars["company_id"]
-		log.Println("&&&&&&&& companyid,email", companyID, userEmail)
 		client := db.InitializeDatabase()
 		err := client.Database(utils.Database).Collection(utils.CompanyRolesCollection).FindOne(context.Background(), primitive.M{"email": userEmail, "company_id": companyID}).Decode(&userRole)
 		if err != nil {
@@ -83,8 +75,6 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		if res {
 			fmt.Println("enforcer result is true")
 		} else {
-			//@
-			fmt.Println("@@@@@@@@", userRole.Role)
 			WriteError(http.StatusForbidden, "FORBIDDEN, unauthorized", w, errors.New("unauthorized"))
 			return
 		}
