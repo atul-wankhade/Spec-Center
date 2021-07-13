@@ -116,7 +116,7 @@
 ```
 #### 4. To get single article in company.
 ```
-   GET: localhost:8080/company/{company_id}/article/{article_id}/article
+   GET: localhost:8080/company/{company_id}/article/{article_id}
 ```
 #### 5. To create article for company.
 ```
@@ -124,11 +124,11 @@
 ```
 #### 6. To update article in company.
 ```
-   PUT: localhost:8080/company/{company_id}/article/{article_id}/article
+   PUT: localhost:8080/company/{company_id}/article/{article_id}
 ```
 #### 7. To delete article in company.
 ```
-   DELELTE: localhost:8080/article/{article_id}/article
+   DELELTE: localhost:8080/article/{article_id}
 ```
 ### ROLE CHANGE APIs
 
@@ -207,7 +207,7 @@
    ]
 ```
 #### 4. GET single article 
-**API:** **localhost:8080/company/{company_id}/article/{article_id}/article**<br/>
+**API:** **localhost:8080/company/{company_id}/article/{article_id}**<br/>
 **Method:** GET<br/>
 **Description:** <br/>To Get single article by it's **article_id** in provided company, only admin, member and superadmin can read  article.<br/>
 **Response:** (for reference only)
@@ -238,7 +238,7 @@
 ```
 
 #### 6. Update article by articleid
-**API:** **localhost:8080/company/{company_id}/article/{article_id}/article**<br/>
+**API:** **localhost:8080/company/{company_id}/article/{article_id}**<br/>
 **Method:** PUT<br/>
 **Description:**
 <br/>1. **superadmin,admin** and **member** have access to this api, checked by **Casbin**.<br/>
@@ -258,7 +258,7 @@
 ```
 
 #### 7. Delete article by articleid
-**API:** **localhost:8080/article/{article_id}/article**<br/>
+**API:** **localhost:8080/article/{article_id}**<br/>
 **Method:** DELETE<br/>
 **Description:**
 <br/>1. superadmin,admin and member have access to this api, checked by "Cashbin".<br/>

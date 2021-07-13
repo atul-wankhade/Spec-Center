@@ -97,8 +97,10 @@ func IsAuthorizedForArticle(companyID, email, role string, httpMethod string, ar
 	defer client.Disconnect(context.Background())
 
 	var articleRole model.ArticleRole
-	filterForArticleRole := primitive.M{"_id": articleID, "email": email, "company_id": companyID}
+	filterForArticleRole := primitive.M{"article_id": articleID.Hex(), "email": email, "company_id": companyID}
+	log.Println("######", companyID, articleID, role, email)
 	err := client.Database(utils.Database).Collection(utils.ArticleRoleCollection).FindOne(context.Background(), filterForArticleRole).Decode(&articleRole)
+	log.Println("#############", err)
 	if err != nil {
 		if role == "member" && (httpMethod == "PUT" || httpMethod == "DELETE") {
 			log.Println("Unauthorized")

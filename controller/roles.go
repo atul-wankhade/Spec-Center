@@ -77,7 +77,7 @@ func UpdateCompanyRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 		return
 	}
 
-	go updateUserArticleRoles(role.UserEmail, role.CompanyId)
+	go updateUserArticleRoles(role.UserEmail, role.CompanyId, role.Role)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message":"` + fmt.Sprintf("Role for user with email :%s  is changed to: %s", role.UserEmail, role.Role) + `"}`))
@@ -177,13 +177,13 @@ func UpdateArticleRoleHandler(w http.ResponseWriter, r *http.Request, claims jwt
 }
 
 // for deleting user role on special article when company role for user is changed, so we can used default role on all article
-func updateUserArticleRoles(userEmail, companyID string) {
+func updateUserArticleRoles(userEmail, companyID string, updatedRole string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client := db.InitializeDatabase()
 	defer client.Disconnect(context.Background())
 	collection := client.Database(utils.Database).Collection(utils.ArticleRoleCollection)
-	filter := primitive.M{"email": userEmail, "company_id": companyID}
+	filter := primitive.M{"email": userEmail, "company_id": companyID, "role": updatedRole}
 	_, err := collection.DeleteMany(ctx, filter)
 	if err != nil {
 		log.Println("Error while deleting user article roles", err)

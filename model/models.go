@@ -23,13 +23,13 @@ type Company struct {
 }
 
 type UserRole struct {
-	UserEmail string `json:"email" bson:"email"`
+	UserID    string `json:"user_id" bson:"user_id"`
 	CompanyId string `json:"company_id" bson:"company_id"`
 	Role      string `json:"role" bson:"role"`
 }
 
 type ArticleRole struct {
-	UserEmail string `json:"email" bson:"email"`
+	UserID    string `json:"user_id" bson:"user_id"`
 	CompanyId string `json:"company_id" bson:"company_id"`
 	ArticleId string `json:"article_id" bson:"article_id"`
 	Role      string `json:"role" bson:"role"`
