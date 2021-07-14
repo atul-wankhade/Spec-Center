@@ -1,7 +1,7 @@
 # Spec Center
 
 # Requirement
-1. Create a web application where there are three entities - Company, Article, Users and
+1. Create a web application where there are four entities - Company, Article, Users and
    Roles.
 2. Company has many Articles. User has and belongs to many Companies through Roles
    table.
