@@ -3,7 +3,7 @@ services:
   mongoservice:
     image: mongo
     volumes:
-      - mongo-volume:/data/mongo-backup
+      - $GOPATH/src/Spec-Center/mongo-volume:/data/db
     ports:
       - "27018:27017"
   spec-center:

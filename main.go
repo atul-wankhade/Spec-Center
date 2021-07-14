@@ -1,9 +1,10 @@
 package main
 
 import (
+	"log"
+
 	"github.com/atul-wankhade/Spec-Center/controller"
 	"github.com/atul-wankhade/Spec-Center/db"
-	"log"
 )
 
 func main() {
@@ -13,7 +14,6 @@ func main() {
 	db.AddRoles()
 
 	db.SuperadminEntry()
-	db.CompanyEntry()
 	//	go worker.Worker()s
 	controller.Start()
 }

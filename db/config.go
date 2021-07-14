@@ -92,7 +92,6 @@ func AddRoles() {
 		log.Println(err)
 	}
 	log.Println("roles entrys added")
-
 }
 
 var gslabUserID, kpointUserID primitive.ObjectID
@@ -168,9 +167,6 @@ func SuperadminEntry() {
 	}
 	log.Println("company entrys added")
 
-}
-
-func CompanyEntry() {
 }
 
 func InitializeDatabase() *mongo.Client {
