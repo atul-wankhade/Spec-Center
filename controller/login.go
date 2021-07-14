@@ -54,10 +54,9 @@ func LoginHandler(response http.ResponseWriter, request *http.Request) {
 
 	userRoleCollection := client.Database(utils.Database).Collection(utils.CompanyRolesCollection)
 	userIsSuperadmin := userRoleCollection.FindOne(ctx, bson.M{"user_id": dbUser.ID.Hex(), "role": "superadmin"})
-	if userIsSuperadmin.Err() != nil {
-		superAdminTag = false
+	if userIsSuperadmin.Err() == nil {
+		superAdminTag = true
 	}
-	superAdminTag = true
 
 	jwtToken, err := GenerateJWT(userEmail, dbUser.ID.Hex(), superAdminTag)
 	if err != nil {
