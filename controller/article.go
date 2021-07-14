@@ -160,9 +160,7 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-
 	defer cancel()
-
 	client := db.InitializeDatabase()
 	defer client.Disconnect(context.Background())
 
@@ -175,12 +173,7 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 		return
 	}
 
-	emailInterface, ok := claims["user_email"]
-	if !ok {
-		authorization.WriteError(http.StatusInternalServerError, "Decode Error", response, errors.New("unable to get email from claims"))
-		return
-	}
-	email := fmt.Sprintf("%v", emailInterface)
+	userID := fmt.Sprintf("%v", claims["user_id"])
 
 	roleInterface, ok := claims["role"]
 	if !ok {
@@ -189,7 +182,7 @@ func UpdateArticleHandler(response http.ResponseWriter, request *http.Request, c
 	}
 	role := fmt.Sprintf("%v", roleInterface)
 
-	authorized := authorization.IsAuthorizedForArticle(companyID, email, role, request.Method, articleID)
+	authorized := authorization.IsAuthorizedForArticle(companyID, userID, role, request.Method, articleID)
 	if !authorized {
 		authorization.WriteError(http.StatusUnauthorized, "UNAUTHORIZED", response, errors.New("unauthorized"))
 		return

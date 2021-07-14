@@ -58,7 +58,7 @@ func IsAuthorized(e *casbin.Enforcer, endpoint func(http.ResponseWriter, *http.R
 		client := db.InitializeDatabase()
 		err := client.Database(utils.Database).Collection(utils.CompanyRolesCollection).FindOne(context.Background(), primitive.M{"user_id": userID, "company_id": companyID}).Decode(&userRole)
 		if err != nil {
-			WriteError(http.StatusUnauthorized, "Invalid companyID", w, err)
+			WriteError(http.StatusUnauthorized, "Unauthorized!", w, err)
 			return
 		}
 
@@ -97,15 +97,13 @@ func WriteError(status int, message string, w http.ResponseWriter, err error) {
 	w.Write([]byte(message))
 }
 
-func IsAuthorizedForArticle(companyID, email, role string, httpMethod string, articleID primitive.ObjectID) bool {
+func IsAuthorizedForArticle(companyID, userID, role string, httpMethod string, articleID primitive.ObjectID) bool {
 	client := db.InitializeDatabase()
 	defer client.Disconnect(context.Background())
 
 	var articleRole model.ArticleRole
-	filterForArticleRole := primitive.M{"article_id": articleID.Hex(), "email": email, "company_id": companyID}
-	log.Println("######", companyID, articleID, role, email)
+	filterForArticleRole := primitive.M{"article_id": articleID.Hex(), "user_id": userID, "company_id": companyID}
 	err := client.Database(utils.Database).Collection(utils.ArticleRoleCollection).FindOne(context.Background(), filterForArticleRole).Decode(&articleRole)
-	log.Println("#############", err)
 	if err != nil {
 		if role == "member" && (httpMethod == "PUT" || httpMethod == "DELETE") {
 			log.Println("Unauthorized")
