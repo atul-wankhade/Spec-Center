@@ -140,11 +140,11 @@
 
 #### 9. To change role of user in company :- Only superadmin can change role of other user.<br/>
 ```
-   PUT: localhost:8080/company/{company_id}/user/{email}/role
+   PUT: localhost:8080/company/{company_id}/user/{user_id}/role
 ```
 #### 10. To change role of user on particular article :- Only superadmin can change role of other user on particular article.<br/>
 ```
-   PUT: localhost:8080/company/{company_id}/user/{email}/article/{article_id}/role
+   PUT: localhost:8080/company/{company_id}/user/{user_id}/article/{article_id}/role
 ```
 
 ## APIs
@@ -293,7 +293,7 @@
 ```
 
 #### 9. Change company role of user.
-**API:** **localhost:8080/company/{company_id}/user/{email}/role**<br/>
+**API:** **localhost:8080/company/{company_id}/user/{user_id}/role**<br/>
 **Method:** PUT<br/>
 **Description:**
 <br/>1. Only superadmin have access to this api, and it's checked by **Casbin**.<br/>
@@ -312,7 +312,7 @@
 ```
 
 #### 10. Change role of user on particular article.
-**API:** ***localhost:8080/company/{company_id}/user/{email}/role**<br/>
+**API:** **localhost:8080/company/{company_id}/user/{user_id}/article/{article_id}/role**<br/>
 **Method:** PUT<br/>
 **Description:**
 <br/> Only superadmin have access to this api, and it's checked by **Casbin** and can change special role of user on particular article that will upated in **article_role** collction if entry already present or it will be added to article role collection. <br/>
